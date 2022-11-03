@@ -1,1 +1,1 @@
-# AnalyTeam - BeerReviews Dataset
+# AnalyTeam - Beer Reviews Dataset
