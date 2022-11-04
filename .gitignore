@@ -1,0 +1,15 @@
+# python cache
+__pycache__
+
+# notebook
+.ipynb*
+
+# compressed files
+*.tar.gz
+
+# files
+*.csv
+*.txt
+
+# folders
+Data
