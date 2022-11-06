@@ -45,18 +45,19 @@ def dask_init():
 
 def dask_shutdown(client):
     """
-    Kills a dask client
+    Kills a dask client.
 
     Args:
-        client (dask.dataframe.Client): client to shutdown
+        client (dask.dataframe.Client): client to shutdown.
     """
     client.shutdown()
 
 ###################################################################
-# CSV EXTRACTORS
+# CSV READERS
+# need dask: call dask_init first, then dask_shutdown when done
 ###################################################################
 
-def lazy_extract(self, path: str, keepcols: List = None, **kwargs):
+def read_csv_lazy(self, path: str, keepcols: List = None, **kwargs):
     """
     Extracts columns from a CSV file into a Dask Dataframe.
 
@@ -79,7 +80,7 @@ def lazy_extract(self, path: str, keepcols: List = None, **kwargs):
 
     return lazy_df
 
-def extract(self, path: str, keepcols: List = None, **kwargs):
+def read_csv(self, path: str, keepcols: List = None, **kwargs):
     """
     Extracts columns from a CSV file into a Dask Dataframe.
 
@@ -96,6 +97,17 @@ def extract(self, path: str, keepcols: List = None, **kwargs):
     return self.lazy_extract(path, keepcols, **kwargs).compute()
 
 ###################################################################
+# TXT READERS
+###################################################################
+
+def read_words(path: str):
+    assert not(path is None)
+    
+    with open(path) as file:
+        words = set(file.read().splitlines())
+    return words
+
+###################################################################
 # PARSERS
 ###################################################################
 
@@ -106,8 +118,7 @@ def __sentiment_word_count(text: str, sentiment_set: Set[str]):
     return len(set(words).intersection(sentiment_set))
 
 def __rating_vals_from(rating_lines: List[str], selected_tags: List[str], pos_set: Set[str], neg_set: Set[str]):
-    # assumes that every line in rating_lines list has the format
-    # tag:value
+    # assumes that every line in rating_lines list has the format tag:value
     
     rating = []
     
@@ -135,22 +146,15 @@ def __rating_vals_from(rating_lines: List[str], selected_tags: List[str], pos_se
     return rating
 
 def __next_rating(file):
-    # assumes that different ratings are spaced by at least one "\n"
+    # <> assumes that different ratings are spaced by at least one "\n"
     # but not necessarily exactly one "\n"
-    # assumes that no comment has a "\n" in it
+    # <> assumes that no comment has a "\n" in it
     rating_lines = []
     next_line = file.readline()
     while len(next_line) > 1:
         rating_lines.append(next_line.strip())
         next_line = file.readline()
     return rating_lines
-
-def read_words(path: str):
-    assert not(path is None)
-    
-    with open(path) as file:
-        words = set(file.read().splitlines())
-    return words
 
 def txt2csv(
     from_path      : str,
