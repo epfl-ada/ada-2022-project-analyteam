@@ -1,7 +1,7 @@
 """
 Summary
 -------
-    This module contains functions to ingest data.
+    This module implements functions and classes to ingest data.
 
 Author
 ------
