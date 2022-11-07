@@ -151,7 +151,10 @@ def __next_rating(file):
     # <> assumes that no comment has a "\n" in it
     rating_lines = []
     next_line = file.readline()
-    while len(next_line) > 1:
+    while len(next_line) >= 1:
+        if len(next_line) == 1:
+            next_line = file.readline() 
+            continue
         rating_lines.append(next_line.strip())
         next_line = file.readline()
     return rating_lines
