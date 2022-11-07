@@ -9,15 +9,14 @@ Author
     Juliette Parchet
 """
 
-# DASK IMPORTS
+# DASK
 import dask.dataframe as dd
 from dask.distributed import Client, LocalCluster
-# NLTK IMPORTS
-import nltk
-nltk.download('stopwords')
-from nltk.corpus import stopwords
-from nltk.tokenize import RegexpTokenizer
-# OTHER IMPORTS
+
+# LOCAL
+from ingestion import SentimentAnalyser, Tokenizer
+
+# OTHERS
 import csv
 from typing import List, Tuple, Set
 
@@ -28,7 +27,7 @@ from typing import List, Tuple, Set
 __ENCODING = "utf-8"
 
 ###################################################################
-# DASK METHODS
+# DASK SETUP
 ###################################################################
 
 def dask_init():
@@ -57,7 +56,7 @@ def dask_shutdown(client):
 # need dask: call dask_init first, then dask_shutdown when done
 ###################################################################
 
-def read_csv_lazy(self, path: str, keepcols: List = None, **kwargs):
+def read_csv_lazy(path: str, keepcols: List = None, **kwargs):
     """
     Extracts columns from a CSV file into a Dask Dataframe.
 
@@ -80,7 +79,7 @@ def read_csv_lazy(self, path: str, keepcols: List = None, **kwargs):
 
     return lazy_df
 
-def read_csv(self, path: str, keepcols: List = None, **kwargs):
+def read_csv(path: str, keepcols: List = None, **kwargs):
     """
     Extracts columns from a CSV file into a Dask Dataframe.
 
@@ -94,54 +93,51 @@ def read_csv(self, path: str, keepcols: List = None, **kwargs):
     Returns:
         (Dask.Dataframe): The resulting dataframe.
     """
-    return self.lazy_extract(path, keepcols, **kwargs).compute()
-
-###################################################################
-# TXT READERS
-###################################################################
-
-def read_words(path: str):
-    assert not(path is None)
-    
-    with open(path) as file:
-        words = set(file.read().splitlines())
-    return words
+    return read_csv_lazy(path, keepcols, **kwargs).compute()
 
 ###################################################################
 # PARSERS
 ###################################################################
 
-def __sentiment_word_count(text: str, sentiment_set: Set[str]):
-    text = text.lower()
-    tokenizer = RegexpTokenizer(r'\w+')
-    words = set(tokenizer.tokenize(text))
-    return len(set(words).intersection(sentiment_set))
-
-def __rating_vals_from(rating_lines: List[str], selected_tags: List[str], pos_set: Set[str], neg_set: Set[str]):
+def __rating_vals_from(
+    rating_lines      : List[str], 
+    selected_tags     : List[str],
+    tokenizer         : Tokenizer,
+    sentiment_analyser: SentimentAnalyser):
     # assumes that every line in rating_lines list has the format tag:value
     
     rating = []
     
+    review_tag = "text"
+    review_presence_tag = "review"
+    
     has_review = False
     review = None
     
-    for _, line in enumerate(rating_lines):
-        line_split = line.split(":")
-        tag, value = line_split[0], ":".join(line_split[1:])
+    # getting the rating's attributes of interest
+    sep = ":"
+    for line in rating_lines:
+        line_split = line.split(sep)
+        tag, value = line_split[0], sep.join(line_split[1:])
         
         if tag in selected_tags:
             rating.append(value)
-            
-        if tag == "text":
+        if tag == review_tag:
             review = value
-        elif tag == "review":
+        elif tag == review_presence_tag:
             has_review = bool(value)
-        
-    n_pos = __sentiment_word_count(review, pos_set) if has_review else 0
-    rating.append(n_pos)
     
-    n_neg = __sentiment_word_count(review, neg_set) if has_review else 0
-    rating.append(n_neg)
+    # review lemmatization
+    if has_review:
+        lemmas = tokenizer.lemmatize(review)
+        rating.append(lemmas)
+    else:
+        rating.append("")   
+    
+    # sentiment analysis
+    scores = sentiment_analyser.scores(review)    
+    rating.append(scores['+'] if has_review else 0)
+    rating.append(scores['-'] if has_review else 0)
     
     return rating
 
@@ -175,17 +171,17 @@ def txt2csv(
     selected_tags = selected_tags if not(selected_tags is None) and len(selected_tags) > 0 \
         else all_tags
     
-    # sentiment sets
-    pos_set, neg_set = sentiment_sets
-    
     with open(from_path, 'r', encoding=__ENCODING) as txt_file,\
         open(to_path, 'w', encoding=__ENCODING, newline='') as csv_file:
         
         writer = csv.writer(csv_file)
         writer.writerow(selected_tags)
         
+        tokenizer = Tokenizer(language="english")
+        sentiment_analyser = SentimentAnalyser()
+        
         rating_lines = __next_rating(txt_file)
         while len(rating_lines) > 0:
-            rating = __rating_vals_from(rating_lines, selected_tags, pos_set, neg_set)         
+            rating = __rating_vals_from(rating_lines, selected_tags, tokenizer, sentiment_analyser)         
             writer.writerow(rating)
             rating_lines = __next_rating(txt_file)
