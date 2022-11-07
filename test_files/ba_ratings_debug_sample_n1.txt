@@ -1,0 +1,20 @@
+
+
+beer_name: Régab
+beer_id: 142544
+brewery_name: Societe des Brasseries du Gabon (SOBRAGA)
+brewery_id: 37262
+style: Euro Pale Lager
+abv: 4.5
+date: 1440064800
+user_name: nmann08
+user_id: nmann08.184925
+appearance: 3.25
+aroma: 2.75
+palate: 3.25
+taste: 2.75
+overall: 3.0
+rating: 2.88
+text: From a bottle, pours a piss yellow color with a fizzy white head.  This is carbonated similar to soda.The nose is basic.. malt, corn, a little floral, some earthy straw.  The flavor is boring, not offensive, just boring.  Tastes a little like corn and grain.  Hard to write a review on something so simple.Its ok, could be way worse.
+review: True
+
