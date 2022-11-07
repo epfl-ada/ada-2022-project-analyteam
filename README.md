@@ -3,7 +3,7 @@
 ## Title: Beer reviewers Categorization 
 
 ## Abstract: (A 150 word description of the project idea and goals. What’s the motivation behind your project? What story would you like to tell, and why?)
-Can we categorize user behavior/personalities with meaningful boundaries and extract trends from these groups? Using the beer review dataset, we want to extract relevant features in order to catagorize the users into some personnality classes, like *Adventurer*, *Free-thinker*, *Conformist*, *Beer-lover*, *Hard-to-please*, ... 
+Can we categorize user behavior/personalities with meaningful boundaries and extract trends from these groups? Using the beer review dataset, we want to extract relevant features in order to catagorize the users into some personnality classes, like *Adventurer*, *Free-thinker*, *Conformist*, *Beer-lover*, *Hard-to-please*,*Like the expert* ... 
 
 ## Research Questions: A list of research questions you would like to address during the project.
 * How do we classify users?
