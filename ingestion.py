@@ -11,14 +11,13 @@ Author
 
 # DASK
 import dask.dataframe as dd
-from dask.distributed import Client, LocalCluster
 
 # LOCAL
-from ingestion import SentimentAnalyser, Tokenizer
+from nlp import SentimentAnalyser, Tokenizer
 
 # OTHERS
 import csv
-from typing import List, Tuple, Set
+from typing import List
 
 ###################################################################
 # GLOBALS
@@ -28,31 +27,6 @@ __ENCODING = "utf-8"
 
 __REVIEW_TAG = "text"
 __REVIEW_PRESENCE_TAG = "review"
-
-###################################################################
-# DASK SETUP
-###################################################################
-
-def dask_init():
-    """
-    Initializes Dask.
-
-    Returns:
-        (dask.distributed.Client, dask.distributed.LocalCluster):
-            A Dask client and local cluster.
-    """
-    cluster = LocalCluster()
-    client = Client(cluster)
-    return client, cluster
-
-def dask_shutdown(client):
-    """
-    Kills a dask client.
-
-    Args:
-        client (dask.dataframe.Client): client to shutdown.
-    """
-    client.shutdown()
 
 ###################################################################
 # CSV READERS

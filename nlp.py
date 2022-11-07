@@ -3,24 +3,11 @@
     -------
     This module regroups functions and classes for NLP
 """
-# NLTK
-import nltk
 from nltk.tokenize import RegexpTokenizer
 from nltk.stem import WordNetLemmatizer
 from nltk.corpus import stopwords
 
-# TRANSFORMERS
 from transformers import pipeline
-
-# OTHER
-from typing import Set, List
-
-###################################################################
-# NLTK SETUP
-###################################################################
-
-def nltk_init():
-    nltk.download("stopwords")
     
 ###################################################################
 # SENTIMENT ANALYSIS
