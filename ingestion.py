@@ -26,6 +26,9 @@ from typing import List, Tuple, Set
 
 __ENCODING = "utf-8"
 
+__REVIEW_TAG = "text"
+__REVIEW_PRESENCE_TAG = "review"
+
 ###################################################################
 # DASK SETUP
 ###################################################################
@@ -58,7 +61,7 @@ def dask_shutdown(client):
 
 def read_csv_lazy(path: str, keepcols: List = None, **kwargs):
     """
-    Extracts columns from a CSV file into a Dask Dataframe.
+    Reads columns from a CSV file into a Dask Dataframe.
 
     Args:
         path (str): 
@@ -69,7 +72,7 @@ def read_csv_lazy(path: str, keepcols: List = None, **kwargs):
             The behavior on an empty list is the same as that on None.
 
     Returns:
-        (Dask.Dataframe): The resulting dataframe.
+        (dask.dataframe.Dataframe): The resulting dataframe.
     """
     # if no column is specified, keep all
     keep_all = keepcols is None or len(keepcols) == 0
@@ -81,7 +84,7 @@ def read_csv_lazy(path: str, keepcols: List = None, **kwargs):
 
 def read_csv(path: str, keepcols: List = None, **kwargs):
     """
-    Extracts columns from a CSV file into a Dask Dataframe.
+    Reads columns from a CSV file into a pandas Dataframe.
 
     Args:
         path (str): 
@@ -89,9 +92,10 @@ def read_csv(path: str, keepcols: List = None, **kwargs):
         keepcols (List[int] or List[str]): 
             Columns to be kept. Refer to the "usecols" attribute of pandas.Dataframe. 
             Defaults to None, in which case no column is discarded.
+            The behavior on an empty list is the same as that on None.
 
     Returns:
-        (Dask.Dataframe): The resulting dataframe.
+        (pandas.Dataframe): The resulting dataframe.
     """
     return read_csv_lazy(path, keepcols, **kwargs).compute()
 
@@ -104,13 +108,21 @@ def __rating_vals_from(
     selected_tags     : List[str],
     tokenizer         : Tokenizer,
     sentiment_analyser: SentimentAnalyser):
+    """_summary_
+
+    Args:
+        rating_lines (List[str]): _description_
+        selected_tags (List[str]): _description_
+        tokenizer (Tokenizer): _description_
+        sentiment_analyser (SentimentAnalyser): _description_
+
+    Returns:
+        _type_: _description_
+    """
     # assumes that every line in rating_lines list has the format tag:value
     
     rating = []
-    
-    review_tag = "text"
-    review_presence_tag = "review"
-    
+        
     has_review = False
     review = None
     
@@ -122,17 +134,18 @@ def __rating_vals_from(
         
         if tag in selected_tags:
             rating.append(value)
-        if tag == review_tag:
+        if tag == __REVIEW_TAG:
             review = value
-        elif tag == review_presence_tag:
+        elif tag == __REVIEW_PRESENCE_TAG:
             has_review = bool(value)
     
     # review lemmatization
-    if has_review:
-        lemmas = tokenizer.lemmatize(review)
-        rating.append(lemmas)
-    else:
-        rating.append("")   
+    if __REVIEW_TAG in selected_tags:
+        if has_review:
+            lemmas = tokenizer.lemmatize(review)
+            rating.append(lemmas)
+        else:
+            rating.append("")   
     
     # sentiment analysis
     scores = sentiment_analyser.scores(review)    
@@ -142,6 +155,14 @@ def __rating_vals_from(
     return rating
 
 def __next_rating(file):
+    """_summary_
+
+    Args:
+        file (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
     # <> assumes that different ratings are spaced by at least one "\n"
     # but not necessarily exactly one "\n"
     # <> assumes that no comment has a "\n" in it
@@ -159,13 +180,20 @@ def txt2csv(
     from_path      : str,
     to_path        : str,
     selected_tags  : List[str], 
-    all_tags       : List[str], 
-    sentiment_sets : Tuple[List[str], List[str]]):
+    all_tags       : List[str]):
+    """_summary_
+
+    Args:
+        from_path (str): _description_
+        to_path (str): _description_
+        selected_tags (List[str]): _description_
+        all_tags (List[str]): _description_
+        sentiment_sets (Tuple[List[str], List[str]]): _description_
+    """
 
     assert not(to_path is None) and len(to_path) > 0
     assert not(from_path is None) and len(from_path) > 0    
     assert not(all_tags is None) and len(all_tags) > 0
-    assert not(sentiment_sets is None) and len(sentiment_sets) == 2
     
     # select all tags by default
     selected_tags = selected_tags if not(selected_tags is None) and len(selected_tags) > 0 \
