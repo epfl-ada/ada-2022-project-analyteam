@@ -18,11 +18,13 @@ class SentimentAnalyser:
     def __init__(self):
         self.__pipeline = pipeline("sentiment-analysis")
     
-    def scores(self, text: str):
-        assert not(text is None)
+    def compute(self, text: str):
+        assert not(text is None) and len(text) > 0
+                
+        sentiment = self.__pipeline(text)
+        sentiment = sentiment[0] # for a text input, there will be one result in the list
         
-        rates_ = self.__pipeline(rates_)
-        return {'+': rates_[0]["score"], '-': rates_[1]["score"]}
+        return sentiment["label"], sentiment["score"]
 
 ###################################################################
 # TOKENIZER
@@ -37,11 +39,11 @@ class Tokenizer:
             
     def tokenize(self, text):
         text = text.lower()
-        tokens = [w for w in self.__tokenizer.tokenize(text) if w not in stopwords.words(self.__language)]
+        stopwords_ = set(stopwords.words(self.__language))
+        tokens = [w for w in self.__tokenizer.tokenize(text) if not(w in stopwords_)]
         return tokens
     
     def lemmatize(self, text):
-        tokens = self.__tokenizer.tokenize(text)
-        lemmas = [self.__lemmatizer.lemmatize(w) for w in tokens]
+        lemmas = [self.__lemmatizer.lemmatize(w) for w in self.tokenize(text)]
         return lemmas
         

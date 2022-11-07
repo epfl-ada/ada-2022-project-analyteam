@@ -95,37 +95,46 @@ def __rating_vals_from(
     """
     # assumes that every line in rating_lines list has the format tag:value
     
-    rating = []
+    rating = {}
         
     has_review = False
     review = None
+    lemmatized_review = None
     
     # getting the rating's attributes of interest
     sep = ":"
     for line in rating_lines:
+        # split tag and value
         line_split = line.split(sep)
         tag, value = line_split[0], sep.join(line_split[1:])
         
+        # write all selected tag values except for the review value, because it requires processing
         if tag in selected_tags:
-            rating.append(value)
-        if tag == __REVIEW_TAG:
+            if tag != __REVIEW_TAG:
+                rating[tag] = value.strip() 
+        if tag == __REVIEW_PRESENCE_TAG:
+            has_review = bool(value.strip().lower() == "true")
+        elif tag == __REVIEW_TAG:
             review = value
-        elif tag == __REVIEW_PRESENCE_TAG:
-            has_review = bool(value)
     
-    # review lemmatization
+    # review processing
     if __REVIEW_TAG in selected_tags:
         if has_review:
-            lemmas = tokenizer.lemmatize(review)
-            rating.append(lemmas)
+            lemmatized_review = " ".join(tokenizer.lemmatize(review))
+            rating[__REVIEW_TAG] = lemmatized_review
         else:
-            rating.append("")   
+            rating[__REVIEW_TAG] = "nan"
     
     # sentiment analysis
-    scores = sentiment_analyser.scores(review)    
-    rating.append(scores['+'] if has_review else 0)
-    rating.append(scores['-'] if has_review else 0)
-    
+    pos_label = "POSITIVE"
+    if has_review:
+        label, score = sentiment_analyser.compute(lemmatized_review)
+        rating["+sentiment"] = score if label == pos_label else 1 - score 
+        rating["-sentiment"] = 1 - rating["+sentiment"]
+    else:
+        rating["+sentiment"] = 0
+        rating["-sentiment"] = 0
+        
     return rating
 
 def __next_rating(file):
@@ -140,14 +149,28 @@ def __next_rating(file):
     # <> assumes that different ratings are spaced by at least one "\n"
     # but not necessarily exactly one "\n"
     # <> assumes that no comment has a "\n" in it
-    rating_lines = []
+    
+    
+    rating_started = False # indicates whether the while loop below has started reading a rating
+    rating_lines = [] # the lines of one rating
+    
     next_line = file.readline()
     while len(next_line) >= 1:
+        # if line has one caracter (could be "\n" or else)
         if len(next_line) == 1:
-            next_line = file.readline() 
-            continue
+            # if rating has not started, keep reading
+            if not(rating_started):
+                next_line = file.readline() 
+                continue
+            # if rating has started, stop reading
+            if rating_started:
+                return rating_lines
+            
+        # strip and append the line
+        rating_started = True
         rating_lines.append(next_line.strip())
         next_line = file.readline()
+        
     return rating_lines
 
 def txt2csv(
@@ -174,16 +197,20 @@ def txt2csv(
         else all_tags
     
     with open(from_path, 'r', encoding=__ENCODING) as txt_file,\
-        open(to_path, 'w', encoding=__ENCODING, newline='') as csv_file:
+        open(to_path, 'w', encoding=__ENCODING) as csv_file:
+        
+        sentiment_tags = ["+sentiment", "-sentiment"]
+        tags = selected_tags + sentiment_tags
         
         writer = csv.writer(csv_file)
-        writer.writerow(selected_tags)
+        writer.writerow(tags)
         
         tokenizer = Tokenizer(language="english")
         sentiment_analyser = SentimentAnalyser()
         
         rating_lines = __next_rating(txt_file)
         while len(rating_lines) > 0:
-            rating = __rating_vals_from(rating_lines, selected_tags, tokenizer, sentiment_analyser)         
-            writer.writerow(rating)
+            rating_dict = __rating_vals_from(rating_lines, selected_tags, tokenizer, sentiment_analyser)
+            ordered_rating = [rating_dict[tag] for tag in tags]
+            writer.writerow(ordered_rating)
             rating_lines = __next_rating(txt_file)
