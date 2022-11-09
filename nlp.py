@@ -17,7 +17,7 @@ class SentimentAnalyser:
     
     def __init__(self):
         self.__pipeline = pipeline("sentiment-analysis")
-    
+                                   
     def compute(self, text: str):
         assert not(text is None) and len(text) > 0
                 

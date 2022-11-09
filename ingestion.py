@@ -120,7 +120,7 @@ def __rating_vals_from(
     # review processing
     if __REVIEW_TAG in selected_tags:
         if has_review:
-            lemmatized_review = " ".join(tokenizer.lemmatize(lemmatized_review))
+            lemmatized_review = " ".join(tokenizer.lemmatize(review))
             rating[__REVIEW_TAG] = lemmatized_review
         else:
             rating[__REVIEW_TAG] = "nan"
@@ -128,7 +128,7 @@ def __rating_vals_from(
     # sentiment analysis
     pos_label = "POSITIVE"
     if has_review:
-        label, score = sentiment_analyser.compute(lemmatized_review)
+        label, score = sentiment_analyser.compute(review)
         rating["+sentiment"] = score if label == pos_label else 1 - score 
         rating["-sentiment"] = 1 - rating["+sentiment"]
     else:
