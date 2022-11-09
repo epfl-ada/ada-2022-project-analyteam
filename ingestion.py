@@ -74,7 +74,7 @@ def read_csv(path: str, keepcols: List = None, **kwargs):
     return read_csv_lazy(path, keepcols, **kwargs).compute()
 
 ###################################################################
-# PARSERS
+# PARSING
 ###################################################################
 
 def __rating_vals_from(
@@ -124,6 +124,7 @@ def __rating_vals_from(
             rating[__REVIEW_TAG] = lemmatized_review
         else:
             rating[__REVIEW_TAG] = "nan"
+    
     
     # sentiment analysis
     pos_label = "POSITIVE"

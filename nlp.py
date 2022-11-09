@@ -7,21 +7,25 @@ from nltk.tokenize import RegexpTokenizer
 from nltk.stem import WordNetLemmatizer
 from nltk.corpus import stopwords
 
-from transformers import pipeline
+import transformers as trafos
     
 ###################################################################
 # SENTIMENT ANALYSIS
 ###################################################################   
 
 class SentimentAnalyser:
-    
     def __init__(self):
-        self.__pipeline = pipeline("sentiment-analysis")
+        self.__pipeline = trafos.pipeline(
+            model="distilbert-base-uncased-finetuned-sst-2-english",
+            revision="af0f99b",
+            tokenizer=trafos.DistilBertTokenizerFast.from_pretrained(
+                "distilbert-base-uncased"))
                                    
     def compute(self, text: str):
         assert not(text is None) and len(text) > 0
-                
-        sentiment = self.__pipeline(text)
+        # text that is too long (its tokenization length exceeds the model's limit)
+        # will be truncated
+        sentiment = self.__pipeline(text, truncation=True)
         sentiment = sentiment[0] # for a text input, there will be one result in the list
         
         return sentiment["label"], sentiment["score"]
