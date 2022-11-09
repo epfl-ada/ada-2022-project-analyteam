@@ -120,7 +120,7 @@ def __rating_vals_from(
     # review processing
     if __REVIEW_TAG in selected_tags:
         if has_review:
-            lemmatized_review = " ".join(tokenizer.lemmatize(review))
+            lemmatized_review = " ".join(tokenizer.lemmatize(lemmatized_review))
             rating[__REVIEW_TAG] = lemmatized_review
         else:
             rating[__REVIEW_TAG] = "nan"
