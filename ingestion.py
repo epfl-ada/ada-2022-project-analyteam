@@ -59,9 +59,6 @@ def build_path(folderind: str, fileind: str, basepath=BASE_PATH):
 
 __ENCODING = "utf-8"
 
-__REVIEW_TAG = "text"
-__REVIEW_PRESENCE_TAG = "review"
-
 ###################################################################
 # CSV READERS
 # need dask: call dask_init first, then dask_shutdown when done
