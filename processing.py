@@ -2,7 +2,19 @@
     This module contains functions and classes for data processing and transformation
 """
 
-def country_of(location: str):
+import re
+
+__USA_REGEX = r".*(USA).*|.*(United States)(of America)?.*"
+__NAN_REGEX = r"[ ]*[nN][a][nN][ ]*"
+
+def get_state(location: str):
+    if location is None:
+        return None
+    
+    if re.match(pattern=__USA_REGEX, string=location):
+        return location.split(sep=",")[1].strip()
+
+def get_country(location: str):
     """_summary_
 
     Args:
@@ -11,14 +23,27 @@ def country_of(location: str):
     Returns:
         _type_: _description_
     """
+    if location is None or re.match(pattern=__NAN_REGEX, string=location):
+        return None
     
-    usa_regex = r".*(USA){1}.*|.*(United States){1}.*"
-    nan_regex = r"[ ]*[nN][a][nN][ ]*"
+    if re.match(pattern=__USA_REGEX, string=location):
+        return "United States"
     
-    if location.match(usa_regex):
-        return "USA"
-    elif location.match(nan_regex):
-        return ""
-    else:
-        return location
+    return location
+
+def str_nan_to_none(text: str):
+    """_summary_
+
+    Args:
+        text (str): _description_
+
+    Returns:
+        _type_: _description_
+    """
+    if text is None:
+        return None
     
+    if re.match(pattern=__NAN_REGEX, string=text):
+        return None
+    
+    return text
