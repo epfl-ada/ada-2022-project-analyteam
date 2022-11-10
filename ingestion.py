@@ -117,9 +117,7 @@ def read_csv(path: str, keepcols: List = None, **kwargs):
 
 def __rating_vals_from(
     rating_lines      : List[str], 
-    selected_tags     : List[str],
-    tokenizer         : Tokenizer,
-    sentiment_analyser: SentimentAnalyser):
+    selected_tags     : List[str]):
     """_summary_
 
     Args:
@@ -132,13 +130,8 @@ def __rating_vals_from(
         _type_: _description_
     """
     # assumes that every line in rating_lines list has the format tag:value
-    
     rating = {}
         
-    has_review = False
-    review = None
-    lemmatized_review = None
-    
     # getting the rating's attributes of interest
     sep = ":"
     for line in rating_lines:
@@ -148,32 +141,8 @@ def __rating_vals_from(
         
         # write all selected tag values except for the review value, because it requires processing
         if tag in selected_tags:
-            if tag != __REVIEW_TAG:
-                rating[tag] = value.strip() 
-        if tag == __REVIEW_PRESENCE_TAG:
-            has_review = bool(value.strip().lower() == "true")
-        elif tag == __REVIEW_TAG:
-            review = value
-    
-    # review processing
-    if __REVIEW_TAG in selected_tags:
-        if has_review:
-            lemmatized_review = " ".join(tokenizer.lemmatize(review))
-            rating[__REVIEW_TAG] = lemmatized_review
-        else:
-            rating[__REVIEW_TAG] = "nan"
-    
-    
-    # sentiment analysis
-    pos_label = "POSITIVE"
-    if has_review:
-        label, score = sentiment_analyser.compute(review)
-        rating["+sentiment"] = score if label == pos_label else 1 - score 
-        rating["-sentiment"] = 1 - rating["+sentiment"]
-    else:
-        rating["+sentiment"] = 0
-        rating["-sentiment"] = 0
-        
+            rating[tag] = value.strip() 
+            
     return rating
 
 def __next_rating(file):

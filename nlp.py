@@ -25,7 +25,7 @@ class SentimentAnalyser:
         assert not(text is None) and len(text) > 0
         # text that is too long (its tokenization length exceeds the model's limit)
         # will be truncated
-        sentiment = self.__pipeline(text, truncation=True)
+        sentiment = self.__pipeline(text, truncation=True, device=0) # device=0 to use GPU
         sentiment = sentiment[0] # for a text input, there will be one result in the list
         
         return sentiment["label"], sentiment["score"]
