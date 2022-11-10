@@ -13,10 +13,10 @@ Can we categorize user behavior/personalities with meaningful boundaries and ext
 
 ## Design choices:
 
-We would have liked to create a category for adventurous users aka users that try unusual beers.
-The idea was to use the number of rating per beer in order to compute this score.
+We would have liked to create a category for adventurers users aka users that try unusual beers.
+The idea was to use the number of rating per beer in order to compute the popularity of each bier score.
 However there is a problem with this approche. Imagine a user has noted an unpopular beers 5 years ago that has now become popular this user will not be classified has adventurer. This is against the definition of adventurer has we've thought about it.
-So instead of taking the number of review for a beer we now the number of review for this year for a beer in order to determine the adventurous score.
+So instead of taking the number of review for a beer we now take the number of review for this bier but in a 2 year timelaps in order to get a better adventurous score.
 
 ## Proposed timeline
 
