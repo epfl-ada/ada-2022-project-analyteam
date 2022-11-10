@@ -9,18 +9,52 @@ Author
     Juliette Parchet
 """
 
-# DASK
 import dask.dataframe as dd
 
-# LOCAL
 from nlp import SentimentAnalyser, Tokenizer
 
-# OTHERS
+import datetime as dt
+
 import csv
 from typing import List
 
 ###################################################################
-# GLOBALS
+# PATHS
+###################################################################
+
+BASE_PATH = "./Data"
+
+FOLDERS = {
+    "ba": "BeerAdvocate",
+    "rb": "RateBeer",
+    "mbd": "MatchedBeerData"
+}
+
+FILES = {
+    "ba": {
+        "beers": "beers.csv",
+        "breweries": "breweries.csv",
+        "users": "users.csv"
+    },
+    "rb": {
+        "beers": "beers.csv",
+        "breweries": "breweries.csv",
+        "users": "users.csv"
+    },
+    "mbd": {
+        "beers": "beers.csv",
+        "breweries": "breweries.csv",
+        "ratings": "ratings.csv",
+        "users": "users.csv",
+        "users approx": "users_approx.csv"
+        }
+}
+
+def build_path(folderind: str, fileind: str, basepath=BASE_PATH):
+    return "/".join([basepath, FOLDERS[folderind], FILES[folderind][fileind]])
+
+###################################################################
+# STATIC VARIABLES
 ###################################################################
 
 __ENCODING = "utf-8"
@@ -33,7 +67,11 @@ __REVIEW_PRESENCE_TAG = "review"
 # need dask: call dask_init first, then dask_shutdown when done
 ###################################################################
 
-def read_csv_lazy(path: str, keepcols: List = None, **kwargs):
+def read_csv_lazy(
+    path: str, 
+    keepcols: List[str] =None, 
+    assume_missing: bool =False, 
+    **kwargs):
     """
     Reads columns from a CSV file into a Dask Dataframe.
 
@@ -51,8 +89,8 @@ def read_csv_lazy(path: str, keepcols: List = None, **kwargs):
     # if no column is specified, keep all
     keep_all = keepcols is None or len(keepcols) == 0
 
-    lazy_df = dd.read_csv(urlpath=path) if keep_all \
-        else dd.read_csv(urlpath=path, usecols=keepcols)
+    lazy_df = dd.read_csv(urlpath=path, assume_missing=assume_missing) if keep_all \
+        else dd.read_csv(urlpath=path, usecols=keepcols, assume_missing=assume_missing)
 
     return lazy_df
 
