@@ -204,18 +204,14 @@ def txt2csv(
     with open(from_path, 'r', encoding=__ENCODING) as txt_file,\
         open(to_path, 'w', encoding=__ENCODING) as csv_file:
         
-        sentiment_tags = ["+sentiment", "-sentiment"]
-        tags = selected_tags + sentiment_tags
+        tags = selected_tags
         
         writer = csv.writer(csv_file)
         writer.writerow(tags)
         
-        tokenizer = Tokenizer(language="english")
-        sentiment_analyser = SentimentAnalyser()
-        
         rating_lines = __next_rating(txt_file)
         while len(rating_lines) > 0:
-            rating_dict = __rating_vals_from(rating_lines, selected_tags, tokenizer, sentiment_analyser)
+            rating_dict = __rating_vals_from(rating_lines, selected_tags)
             ordered_rating = [rating_dict[tag] for tag in tags]
             writer.writerow(ordered_rating)
             rating_lines = __next_rating(txt_file)
