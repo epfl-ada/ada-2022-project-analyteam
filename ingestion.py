@@ -34,7 +34,8 @@ FILES = {
     "ba": {
         "beers": "beers.csv",
         "breweries": "breweries.csv",
-        "users": "users.csv"
+        "users": "users.csv",
+        "ratings": "ratings.csv"
     },
     "rb": {
         "beers": "beers.csv",
@@ -64,11 +65,11 @@ __ENCODING = "utf-8"
 # need dask: call dask_init first, then dask_shutdown when done
 ###################################################################
 
-def read_csv_lazy(
+def read_csv(
     path: str, 
     keepcols: List[str] =None, 
-    assume_missing: bool =False, 
-    **kwargs):
+    assume_missing: bool =False,
+    mode: str ="lazy"):
     """
     Reads columns from a CSV file into a Dask Dataframe.
 
@@ -86,27 +87,16 @@ def read_csv_lazy(
     # if no column is specified, keep all
     keep_all = keepcols is None or len(keepcols) == 0
 
-    lazy_df = dd.read_csv(urlpath=path, assume_missing=assume_missing) if keep_all \
+    lazy_ddf = dd.read_csv(urlpath=path, assume_missing=assume_missing) if keep_all \
         else dd.read_csv(urlpath=path, usecols=keepcols, assume_missing=assume_missing)
 
-    return lazy_df
-
-def read_csv(path: str, keepcols: List = None, **kwargs):
-    """
-    Reads columns from a CSV file into a pandas Dataframe.
-
-    Args:
-        path (str): 
-            The path to the CSV file.
-        keepcols (List[int] or List[str]): 
-            Columns to be kept. Refer to the "usecols" attribute of pandas.Dataframe. 
-            Defaults to None, in which case no column is discarded.
-            The behavior on an empty list is the same as that on None.
-
-    Returns:
-        (pandas.Dataframe): The resulting dataframe.
-    """
-    return read_csv_lazy(path, keepcols, **kwargs).compute()
+    if mode == "lazy":
+        return lazy_ddf
+    
+    if mode == "eager":
+        return lazy_ddf.compute()
+    
+    raise ValueError("Mode (%s) is not supported. Supported modes are \"eager\" or \"lazy\"."%(mode))
 
 ###################################################################
 # PARSING
