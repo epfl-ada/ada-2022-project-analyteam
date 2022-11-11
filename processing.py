@@ -7,6 +7,7 @@ import pandas as pd
 import numpy as np
 
 import ingestion as ing
+from domain_specs import beeradvocate_ratings_ddf
 
 import re
 
@@ -73,14 +74,23 @@ def str_nan_to_nan(text: str):
     
     if re.match(pattern=__NAN_REGEX, string=text):
         return np.nan
-    
-##########################################################################
-# DATA HANDLING PIPELINE
-##########################################################################
 
-############
-# users.csv
-############
+def to_none_ifnot_str(elem: object):
+    if elem is None:
+        return None
+    
+    if elem == np.nan:
+        return None 
+        
+    if isinstance(elem, str):
+        return elem
+    
+    return None
+    
+#####################
+# users.csv pipeline
+#####################
+
 __USERS_COLS = [
     "nbr_ratings",
     "nbr_reviews",
@@ -102,39 +112,12 @@ __USERS_DTYPES = {
     "location": str
 }
 
-##############
-# ratings.csv
-##############
-__RATINGS_COLS=[
-    "date",
-    "beer_id",
-    "user_id",
-    "appearance",
-    "aroma",
-    "palate",
-    "taste",
-    "overall",
-    "rating"
-]
-__RATINGS_COLS_RENAMING = {
-    "beer_id": "bid",
-    "user_id": "uid"
-}
-__RATINGS_DTYPES = {
-    "bid": str,
-    "uid": str
-}
-__COUNTRIES_OF_INTEREST = [
-    "United States", "Canada", "England", "Australia"]
-
-def pipeline(mode: str ="lazy"):
+def users_pipeline():
     """_summary_
-    """
-    ###############
-    # users.csv
-    # provided
-    ###############
-    
+
+    Returns:
+        _type_: _description_
+    """    
     # load the data
     users_ddf = ing.read_csv(
         path=ing.build_path(folderind="ba", fileind="users"),
@@ -146,16 +129,53 @@ def pipeline(mode: str ="lazy"):
     # type conversion
     users_ddf = users_ddf.astype(__USERS_DTYPES)
     # convert "nan" to None in "location"
-    users_ddf["location"] = users_ddf.location.apply(str_nan_to_none)
+    users_ddf["location"] = users_ddf.location.apply(str_nan_to_none, meta=("location", "object"))
     # convert "joined" floats to pandas.Timestamp
     users_ddf["joined"] = ddf.to_datetime(users_ddf.joined, unit="s")
     # append country column
-    users_ddf["country"] = users_ddf["location"].apply(get_country)
+    users_ddf["country"] = users_ddf["location"].apply(get_country, meta=("country" , "object"))
     
-    ##############################################
-    # ratings.csv
-    # obtained by parsing the provided ratings.txt
-    ##############################################
+    return users_ddf
+
+#######################
+# ratings.csv pipeline
+#######################
+
+__RATING_ASPECTS = [
+    "appearance", "aroma", "palate", "taste", "overall"]
+__RATINGS_COLS=[
+    "date",
+    "beer_id",
+    "user_id",
+    "appearance",
+    "aroma",
+    "palate",
+    "taste",
+    "overall",
+    "rating",
+    "review",
+    "text"
+]
+__RATINGS_COLS_RENAMING = {
+    "beer_id": "bid",
+    "user_id": "uid",
+    "review" : "has_review",
+    "text" : "review"
+}
+__RATINGS_DTYPES = {
+    "bid": "str",
+    "uid": "str",
+    "has_review": "bool"
+}
+__COUNTRIES_OF_INTEREST = [
+    "United States", "Canada", "England", "Australia"]
+
+def ratings_pipeline(users_ddf):
+    """_summary_
+
+    Returns:
+        _type_: _description_
+    """
     
     # load the data
     ratings_ddf = ing.read_csv(
@@ -165,18 +185,48 @@ def pipeline(mode: str ="lazy"):
         mode="lazy")
     # rename columns
     ratings_ddf = ratings_ddf.rename(columns=__RATINGS_COLS_RENAMING)
+    new_rating_colnames = [__RATINGS_COLS_RENAMING.get(old_colname, old_colname) for old_colname in __RATINGS_COLS]
+    # drop beer ratings with missing beer ID since we do not know to which beer the rating corresponds
+    ratings_ddf = ratings_ddf[ratings_ddf.bid.notnull()]
+    # drop beer ratings with missing user ID since we are interested in user classification
+    ratings_ddf = ratings_ddf[ratings_ddf.uid.notnull()]
     # type conversion
     ratings_ddf = ratings_ddf.astype(__RATINGS_DTYPES)
+    # keep only ratings with computable beer rating
+    # a beer rating is computable <=> all beer aspects' ratings are available
+    # if the beer rating is available, do not drop the rating
+    computable_rating_mask = False # (False | X) == X
+    for rating_aspect in __RATING_ASPECTS:
+        computable_rating_mask &= ratings_ddf[rating_aspect].notnull()
+    ratings_ddf = ratings_ddf[computable_rating_mask | ratings_ddf.rating.notnull()]
     # keep only ratings from users located in the countries of interest
     users_w_ratings_ddf = ddf.merge(
-        ratings_ddf, 
+        ratings_ddf,
         users_ddf, 
-        how="inner", left_on="uid", right_on="uid", suffixes=("","_u"))
-    ratings_ddf = users_w_ratings_ddf[users_w_ratings_ddf.country_u.isin(__COUNTRIES_OF_INTEREST)]
-    ratings_ddf = ratings_ddf[__RATINGS_COLS] # drops the join columns
+        how="inner", left_on="uid", right_on="uid")
+    ratings_ddf = users_w_ratings_ddf[users_w_ratings_ddf.country.isin(__COUNTRIES_OF_INTEREST)]
+    ratings_ddf = ratings_ddf[new_rating_colnames] # drops the join columns
+    # recover beer ratings when missing, if possible
+    # a beer rating is recoverable <=> it is computable and the rating is missing
+    # do not recompute the already computed ratings, so check that the rating is missing
+    recoverable_missing_ratings_mask = computable_rating_mask & ratings_ddf.rating.isnull()
+    ratings_ddf[recoverable_missing_ratings_mask] = beeradvocate_ratings_ddf(ratings_ddf[recoverable_missing_ratings_mask])
     # convert "date" float values to pandas.Timestamp
     ratings_ddf["date"] = ddf.to_datetime(ratings_ddf.date, unit="s")
-    # 
+    # convert "nan" values in "review" (new name for "text") to None
+    ratings_ddf["review"] = ratings_ddf.review.apply(to_none_ifnot_str, meta=("review", "object"))
+    
+    return ratings_ddf
+
+#################
+# final pipeline
+#################
+
+def data_pipeline(mode: str ="lazy"):
+    """_summary_
+    """
+    users_ddf   = users_pipeline()
+    ratings_ddf = ratings_pipeline(users_ddf)
     
     if mode == "lazy":
         return (ratings_ddf, users_ddf)
