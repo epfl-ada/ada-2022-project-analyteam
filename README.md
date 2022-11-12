@@ -18,6 +18,10 @@ The idea was to use the number of rating per beer in order to compute the popula
 However there is a problem with this approche. Imagine a user has noted an unpopular beers 5 years ago that has now become popular this user will not be classified has adventurer. This is against the definition of adventurer has we've thought about it.
 So instead of taking the number of review for a beer we now take the number of review for this bier but in a 2 year timelaps in order to get a better adventurous score.
 
+One good point would have been to be able to detect user changing behavior with time. For exemple user x start giving none conventional rating but with time user x become more expert like. If we analyse user x over all his ratings he will no appear as expert like. However if we analyse user x in the last year he will clearly appear as expert like.
+In order to see this variations of user behavior we would have to analyse ratings in diffrent timelaps however we don't have that much rating per user and some timelaps might be quite empty because a user simply wasn't rating during this time. 
+That's why we've decided to forget about user like user x that varied drastically theyr behavior with time.
+
 ## Proposed timeline
 
 ## Organization within the team: A list of internal milestones up until project Milestone P3.
