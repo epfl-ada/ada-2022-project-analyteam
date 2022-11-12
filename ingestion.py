@@ -23,6 +23,7 @@ from typing import List
 ###################################################################
 
 BASE_PATH = "./Data"
+REFINED_PATH = "./RefinedData"
 
 FOLDERS = {
     "ba": "BeerAdvocate",
@@ -30,29 +31,8 @@ FOLDERS = {
     "mbd": "MatchedBeerData"
 }
 
-FILES = {
-    "ba": {
-        "beers": "beers.csv",
-        "breweries": "breweries.csv",
-        "users": "users.csv",
-        "ratings": "ratings.csv"
-    },
-    "rb": {
-        "beers": "beers.csv",
-        "breweries": "breweries.csv",
-        "users": "users.csv"
-    },
-    "mbd": {
-        "beers": "beers.csv",
-        "breweries": "breweries.csv",
-        "ratings": "ratings.csv",
-        "users": "users.csv",
-        "users approx": "users_approx.csv"
-        }
-}
-
-def build_path(folderind: str, fileind: str, basepath=BASE_PATH):
-    return "/".join([basepath, FOLDERS[folderind], FILES[folderind][fileind]])
+def build_path(folderind: str, filename: str, ext: str =".csv", basepath=BASE_PATH):
+    return "/".join([basepath, FOLDERS[folderind], filename + ext])
 
 ###################################################################
 # STATIC VARIABLES
@@ -66,7 +46,7 @@ __ENCODING = "utf-8"
 ###################################################################
 
 def read_csv(
-    path: str, 
+    path: str,
     keepcols: List[str] =None, 
     assume_missing: bool =False,
     mode: str ="lazy"):
@@ -99,10 +79,49 @@ def read_csv(
     raise ValueError("Mode (%s) is not supported. Supported modes are \"eager\" or \"lazy\"."%(mode))
 
 ###################################################################
+# PARQUET READERS
+# need dask: call dask_init first, then dask_shutdown when done
+###################################################################
+
+def read_parquet(
+    path: str,
+    keepcols: List[str] =None, 
+    assume_missing: bool =False,
+    mode: str ="lazy"):
+    """
+    Reads columns from a parquet file into a Dask Dataframe.
+
+    Args:
+        path (str): 
+            The path to the parquet file.
+        keepcols (List[int] or List[str]): 
+            Columns to be kept. Refer to the "usecols" attribute of pandas.Dataframe. 
+            Defaults to None, in which case no column is discarded.
+            The behavior on an empty list is the same as that on None.
+
+    Returns:
+        (dask.dataframe.Dataframe): The resulting dataframe.
+    """
+    # if no column is specified, keep all
+    keep_all = keepcols is None or len(keepcols) == 0
+
+    print(path)
+    lazy_ddf = dd.read_parquet(path=path, assume_missing=assume_missing) if keep_all \
+        else dd.read_parquet(path=path, columns=keepcols, assume_missing=assume_missing)
+
+    if mode == "lazy":
+        return lazy_ddf
+    
+    if mode == "eager":
+        return lazy_ddf.compute()
+    
+    raise ValueError("Mode (%s) is not supported. Supported modes are \"eager\" or \"lazy\"."%(mode))
+
+###################################################################
 # PARSING
 ###################################################################
 
-def __rating_vals_from(
+def _rating_vals_from(
     rating_lines      : List[str], 
     selected_tags     : List[str]):
     """_summary_
@@ -132,7 +151,7 @@ def __rating_vals_from(
             
     return rating
 
-def __next_rating(file):
+def _next_rating(file):
     """_summary_
 
     Args:
@@ -199,9 +218,9 @@ def txt2csv(
         writer = csv.writer(csv_file)
         writer.writerow(tags)
         
-        rating_lines = __next_rating(txt_file)
+        rating_lines = _next_rating(txt_file)
         while len(rating_lines) > 0:
-            rating_dict = __rating_vals_from(rating_lines, selected_tags)
+            rating_dict = _rating_vals_from(rating_lines, selected_tags)
             ordered_rating = [rating_dict[tag] for tag in tags]
             writer.writerow(ordered_rating)
-            rating_lines = __next_rating(txt_file)
+            rating_lines = _next_rating(txt_file)

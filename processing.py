@@ -2,10 +2,12 @@
     This module contains functions and classes for data processing and transformation
 """
 import dask.dataframe as ddf
+import dask.array as da
 
 import numpy as np
 
 import ingestion as ing
+from nlp import SentimentAnalyser
 from domain_specs import beeradvocate_ratings_ddf
 
 import re
@@ -111,18 +113,21 @@ __USERS_DTYPES = {
     "location": str
 }
 
-def users_pipeline():
+def users_pipeline(persist: bool =False):
     """_summary_
+
+    Args:
+        persist (bool, optional): _description_. Defaults to False.
 
     Returns:
         _type_: _description_
-    """    
+    """
     # load the data
     users_ddf = ing.read_csv(
-        path=ing.build_path(folderind="ba", fileind="users"),
+        path=ing.build_path(folderind="ba", filename="users"),
         assume_missing=True,
         keepcols=__USERS_COLS,
-        mode="lazy")
+        mode="lazy")        
     # rename columns
     users_ddf = users_ddf.rename(columns=__USERS_COLS_RENAMING)
     # type conversion
@@ -133,6 +138,11 @@ def users_pipeline():
     users_ddf["joined"] = ddf.to_datetime(users_ddf.joined, unit="s")
     # append country column
     users_ddf["country"] = users_ddf["location"].apply(get_country, meta=("country" , "object"))
+    
+    # persist to disk
+    if persist:
+        users_ddf = users_ddf.to_parquet(
+            ing.build_path(folderind="ba", filename="users", ext=".parquet", basepath=ing.REFINED_PATH))
     
     return users_ddf
 
@@ -162,6 +172,7 @@ __RATINGS_COLS_RENAMING = {
     "text" : "review"
 }
 __RATINGS_DTYPES = {
+    "bid": np.int32,
     "bid": "str",
     "uid": "str",
     "has_review": "bool"
@@ -169,7 +180,7 @@ __RATINGS_DTYPES = {
 __COUNTRIES_OF_INTEREST = [
     "United States", "Canada", "England", "Australia"]
 
-def ratings_pipeline(users_ddf):
+def ratings_pipeline(persist: bool =False, **kwargs):
     """_summary_
 
     Args:
@@ -178,13 +189,24 @@ def ratings_pipeline(users_ddf):
     Returns:
         _type_: _description_
     """
+    users_persisted= kwargs.get("users_persisted", False)
     
     # load the data
+    users_ddf = None
+    if users_persisted:
+        users_ddf = ing.read_parquet(
+            path=ing.build_path(folderind="ba", filename="users", ext=".parquet", basepath=ing.REFINED_PATH),
+            mode="lazy"
+        )
+    else:
+        users_ddf = kwargs["users"]
+
     ratings_ddf = ing.read_csv(
-        path=ing.build_path(folderind="ba", fileind="ratings", basepath="./RefinedData"),
+        path=ing.build_path(folderind="ba", filename="ratings", basepath=ing.REFINED_PATH),
         assume_missing=True,
         keepcols=__RATINGS_COLS,
         mode="lazy")
+        
     # rename columns
     ratings_ddf = ratings_ddf.rename(columns=__RATINGS_COLS_RENAMING)
     new_rating_colnames = [__RATINGS_COLS_RENAMING.get(old_colname, old_colname) for old_colname in __RATINGS_COLS]
@@ -218,17 +240,24 @@ def ratings_pipeline(users_ddf):
     # convert "nan" values in "review" (new name for "text") to None
     ratings_ddf["review"] = ratings_ddf.review.apply(to_none_ifnot_str, meta=("review", "object"))
     
+    # persist
+    if persist:
+        ratings_ddf.to_parquet(
+            ing.build_path(folderind="ba", filename="ratings", ext=".parquet", basepath=ing.REFINED_PATH))
+    
     return ratings_ddf
 
 #################
 # beers pipeline
 #################
 
-__BEERS_COLS = [
-    ""
+__BEER_COLS_FROM_RATINGS = [
+    "bid",
+    "rating",
+    "has_review"
 ]
 
-def beers_pipeline(ratings_ddf):
+def beers_pipeline(persist: bool =False, **kwargs):
     """_summary_
 
     Args:
@@ -237,16 +266,90 @@ def beers_pipeline(ratings_ddf):
     Returns:
         _type_: _description_
     """
-    beers_ddf = ratings_ddf.copy()
+    # load the data
+    ratings_pesisted = kwargs.get("ratings_persisted", False)
+    ratings_ddf = None
+    if ratings_pesisted:
+        ratings_ddf = ing.read_parquet(
+            path=ing.build_path("ba", "ratings", ext=".parquet", basepath=ing.REFINED_PATH),
+            lazy="lazy")
+    else:
+        ratings_ddf = kwargs["ddf"]
+        
+    # group by beer id the selected features
+    beers_base_ddf = ratings_ddf[__BEER_COLS_FROM_RATINGS].groupby("bid")
+    # append average ratings (rating and aspects' ratings) and the review rate
+    beers_ddf = beers_base_ddf.agg("mean")
+    beers_ddf = beers_ddf.rename(columns={
+        "rating": "avg_rating",
+        "has_review": "review_rate"})
+    # append the number of ratings per beer
+    beers_ddf["n_ratings"] = beers_base_ddf.size()
+    # append the number of reviews
+    beers_ddf["n_reviews"] = beers_base_ddf["has_review"].sum()
+    # reseting the index
+    beers_ddf = beers_ddf.reset_index()
     
+    # load the existing beers.csv 
+    
+    
+    # merge columns of interest with the current beers dataframe
+    
+    
+    # persist
+    if persist:
+        beers_ddf.to_parquet(ing.build_path(folderind="ba", filename="beers", ext=".parquet", basepath=ing.REFINED_PATH))
     
     return beers_ddf
 
-#################
-# global pipeline
-#################
+#####################
+# sentiment pipeline
+#####################
 
-def data_pipeline(mode: str ="lazy"):
+__SENTIMENT_COLS = [
+    "date", "bid", "uid", "rating", "has_review", "review"
+]
+
+def sentiment_pipeline(ratings_ddf):
+    """_summary_
+
+    Args:
+        ratings_ddf (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+    analyser = SentimentAnalyser()
+    def pos_sentiment_in(text: str):
+        """_summary_
+
+        Args:
+            text (str): _description_
+
+        Returns:
+            _type_: _description_
+        """
+        label, score = analyser.compute(text)
+        return score if label == "POSITIVE" else 1 - score
+    
+    # select columns of interest
+    sentiment_ddf = ratings_ddf[__SENTIMENT_COLS]
+    # initialize sentiment
+    sentiment_ddf["s+"] = 0
+    sentiment_ddf["s-"] = 0
+    # compute and set sentiment for ratings with reviews
+    with_reviews = sentiment_ddf["has_review"]
+    sentiment_ddf[with_reviews, "s+"] = sentiment_ddf[with_reviews, "review"].apply(
+        pos_sentiment_in, meta=("review", "float32"))
+    sentiment_ddf[with_reviews, "s-"] = 1 - sentiment_ddf[with_reviews, "s+"] 
+    
+    return sentiment_ddf
+
+################
+# data pipeline
+################
+
+def data_pipeline(mode: str ="lazy", with_sentiment: bool=False):
     """_summary_
 
     Args:
@@ -258,14 +361,18 @@ def data_pipeline(mode: str ="lazy"):
     Returns:
         _type_: _description_
     """
-    users_ddf   = users_pipeline()
+    users_ddf = users_pipeline()
     ratings_ddf = ratings_pipeline(users_ddf)
     
+    data = [users_ddf, ratings_ddf, beers_pipeline(ratings_ddf)]
+    if with_sentiment:
+        data.append(sentiment_pipeline(ratings_ddf))
+    
     if mode == "lazy":
-        return (ratings_ddf, users_ddf)
+        return data
     
     if mode == "eager":
-        return (ratings_ddf.compute(), users_ddf.compute())
+        return list(map(lambda d: d.compute(), data))
     
     raise ValueError("Mode (%s) is not supported. Supported modes are \"eager\" or \"lazy\"."%(mode))
         
