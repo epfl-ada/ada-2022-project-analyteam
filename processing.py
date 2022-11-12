@@ -272,7 +272,7 @@ def beers_pipeline(persist: bool =False, **kwargs):
     if ratings_pesisted:
         ratings_ddf = ing.read_parquet(
             path=ing.build_path("ba", "ratings", ext=".parquet", basepath=ing.REFINED_PATH),
-            lazy="lazy")
+            mode="lazy")
     else:
         ratings_ddf = kwargs["ddf"]
         

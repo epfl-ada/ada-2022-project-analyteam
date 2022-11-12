@@ -22,8 +22,8 @@ from typing import List
 # PATHS
 ###################################################################
 
-BASE_PATH = "./Data"
-REFINED_PATH = "./RefinedData"
+BASE_PATH = "Data"
+REFINED_PATH = "RefinedData"
 
 FOLDERS = {
     "ba": "BeerAdvocate",
@@ -105,7 +105,6 @@ def read_parquet(
     # if no column is specified, keep all
     keep_all = keepcols is None or len(keepcols) == 0
 
-    print(path)
     lazy_ddf = dd.read_parquet(path=path, assume_missing=assume_missing) if keep_all \
         else dd.read_parquet(path=path, columns=keepcols, assume_missing=assume_missing)
 
