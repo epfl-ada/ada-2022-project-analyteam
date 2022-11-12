@@ -172,6 +172,9 @@ __COUNTRIES_OF_INTEREST = [
 def ratings_pipeline(users_ddf):
     """_summary_
 
+    Args:
+        users_ddf (_type_): _description_
+
     Returns:
         _type_: _description_
     """
@@ -218,11 +221,42 @@ def ratings_pipeline(users_ddf):
     return ratings_ddf
 
 #################
-# final pipeline
+# beers pipeline
+#################
+
+__BEERS_COLS = [
+    ""
+]
+
+def beers_pipeline(ratings_ddf):
+    """_summary_
+
+    Args:
+        ratings_ddf (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+    beers_ddf = ratings_ddf.copy()
+    
+    
+    return beers_ddf
+
+#################
+# global pipeline
 #################
 
 def data_pipeline(mode: str ="lazy"):
     """_summary_
+
+    Args:
+        mode (str, optional): _description_. Defaults to "lazy".
+
+    Raises:
+        ValueError: _description_
+
+    Returns:
+        _type_: _description_
     """
     users_ddf   = users_pipeline()
     ratings_ddf = ratings_pipeline(users_ddf)
