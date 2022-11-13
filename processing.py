@@ -2,7 +2,6 @@
     This module contains functions and classes for data processing and transformation
 """
 import dask.dataframe as ddf
-import dask.array as da
 
 import numpy as np
 
@@ -173,7 +172,6 @@ __RATINGS_COLS_RENAMING = {
 }
 __RATINGS_DTYPES = {
     "bid": np.int32,
-    "bid": "str",
     "uid": "str",
     "has_review": "bool"
 }
@@ -251,11 +249,70 @@ def ratings_pipeline(persist: bool =False, **kwargs):
 # beers pipeline
 #################
 
-__BEER_COLS_FROM_RATINGS = [
+__BEERS_CSV_COLS_OF_INTEREST = [
+    "beer_id",
+    "beer_name",
+    "style",
+    "abv",
+    "ba_score",
+    "bros_score"]
+__BEERS_CSV_COLS_RENAMING = {
+    "beer_id": "bid",
+    "beer_name": "name"
+}
+__BEERS_CSV_DTYPES = {
+    "bid": np.int32,
+    "abv": np.float32,
+    "ba_score": np.float32,
+    "bros_score": np.float32, 
+}
+
+def beerscsv_pipeline(persist: bool =False):
+    """_summary_
+
+    Args:
+        persist (bool, optional): _description_. Defaults to False.
+    """
+    # load the data
+    beerscsv_ddf = ing.read_csv(
+        path=ing.build_path(folderind="ba", filename="beers", ext=".csv"),
+        keepcols=__BEERS_CSV_COLS_OF_INTEREST,
+        mode="lazy")
+    # rename the columns
+    beerscsv_ddf = beerscsv_ddf.rename(columns=__BEERS_CSV_COLS_RENAMING)
+    # drop beers with unknown beer ID
+    beerscsv_ddf = beerscsv_ddf[beerscsv_ddf["bid"].notnull()]
+    # convert data types
+    beerscsv_ddf = beerscsv_ddf.astype(__BEERS_CSV_DTYPES)
+    
+    if persist:
+        beerscsv_ddf.to_parquet(
+            ing.build_path(folderind="ba", filename="beers_csv", ext=".parquet", basepath=ing.REFINED_PATH))
+    
+    return beerscsv_ddf
+    
+__BEERS_COLS_FROM_RATINGS = [
     "bid",
     "rating",
     "has_review"
 ]
+__BEERS_DTYPES = {
+    "bid": np.int32,
+    "avg_rating": np.float32,
+    "review_rate": np.float32
+}
+__BEERS_COLS_ORDERED = [
+    "bid",
+    "n_ratings",
+    "avg_rating",
+    "n_reviews",
+    "review_rate",
+    "ba_score",
+    "bros_score",
+    "name",
+    "style",
+    "abv"
+    ]
 
 def beers_pipeline(persist: bool =False, **kwargs):
     """_summary_
@@ -268,6 +325,7 @@ def beers_pipeline(persist: bool =False, **kwargs):
     """
     # load the data
     ratings_pesisted = kwargs.get("ratings_persisted", False)
+    beerscsv_persisted = kwargs.get("beerscsv_persisted", False)
     ratings_ddf = None
     if ratings_pesisted:
         ratings_ddf = ing.read_parquet(
@@ -277,7 +335,7 @@ def beers_pipeline(persist: bool =False, **kwargs):
         ratings_ddf = kwargs["ddf"]
         
     # group by beer id the selected features
-    beers_base_ddf = ratings_ddf[__BEER_COLS_FROM_RATINGS].groupby("bid")
+    beers_base_ddf = ratings_ddf[__BEERS_COLS_FROM_RATINGS].groupby("bid")
     # append average ratings (rating and aspects' ratings) and the review rate
     beers_ddf = beers_base_ddf.agg("mean")
     beers_ddf = beers_ddf.rename(columns={
@@ -289,12 +347,23 @@ def beers_pipeline(persist: bool =False, **kwargs):
     beers_ddf["n_reviews"] = beers_base_ddf["has_review"].sum()
     # reseting the index
     beers_ddf = beers_ddf.reset_index()
+    # convert dtypes
+    beers_ddf = beers_ddf.astype(__BEERS_DTYPES)
     
-    # load the existing beers.csv 
-    
-    
+    # loading and processing beers.csv via its pipeline
+    beerscsv_ddf = None
+    if beerscsv_persisted:
+        beerscsv_ddf = ing.read_parquet(
+            ing.build_path(folderind="ba", filename="beers_csv", ext=".parquet", basepath=ing.REFINED_PATH),
+            mode="lazy")
+    else:
+        beerscsv_ddf = beerscsv_pipeline()
+        
     # merge columns of interest with the current beers dataframe
+    beers_ddf = ddf.merge(beers_ddf, beerscsv_ddf, on="bid", how="inner")
     
+    # reorder columns
+    beers_ddf = beers_ddf[__BEERS_COLS_ORDERED]
     
     # persist
     if persist:

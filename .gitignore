@@ -12,5 +12,5 @@ __pycache__
 *.txt
 
 # folders
-Data
+*Data
 test_files
