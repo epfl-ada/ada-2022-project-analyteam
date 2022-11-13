@@ -433,6 +433,7 @@ def data_pipeline(mode: str ="lazy", with_sentiment: bool=False):
     users_ddf = users_pipeline()
     ratings_ddf = ratings_pipeline(users_ddf)
     
+    
     data = [users_ddf, ratings_ddf, beers_pipeline(ratings_ddf)]
     if with_sentiment:
         data.append(sentiment_pipeline(ratings_ddf))
