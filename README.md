@@ -9,7 +9,7 @@ We aim to naturally soft-cluster as many users frequenting the website as possib
 ## Questions We Want To Address
 ---
 * Does natural user soft-clustering help grasp and quantify the attractiveness of a website for each type of users ? Can we use this clustering to help breakdown and understand variations in the attractiveness of a website over time ?
-* Can natural user clustering help uncover hidden consumer/reviewer behavior ? In simpler terms, what can we tell about the users belonging to the same cathegory ? Are they vary similar in the language they use or the ratings they give ? Do cross-cathegory preferences in the same location vary significantly ? Can we build personas for each cathegory to help the website administrators better grasp the kind of users who frequent the website ?
+* Can natural user clustering help uncover hidden consumer/reviewer behavior ? In simpler terms, what can we tell about the users belonging to the same cathegory ? Are they very similar in the language they use or the ratings they give ? Do cross-cathegory preferences in the same location vary significantly ? Can we build personas for each cathegory to help the website administrators better grasp the kind of users who frequent the website ?
 
 ## Design choices:
 ---
