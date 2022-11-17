@@ -14,6 +14,8 @@ import dask.dataframe as dd
 import csv
 from typing import List
 
+from pathlib import Path
+
 ###################################################################
 # PATHS
 ###################################################################
@@ -44,7 +46,7 @@ def build_path(folderind: str, filename: str, ext: str =".csv", basepath=BASE_PA
     Returns:
         (str): The file path
     """
-    return "/".join([basepath, FOLDERS[folderind], filename + ext])
+    return Path("/".join([basepath, FOLDERS[folderind], filename + ext]))
 
 ###################################################################
 # STATIC VARIABLES
