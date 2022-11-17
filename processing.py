@@ -140,7 +140,7 @@ def users_pipeline(persist: bool =False):
     
     # persist to disk
     if persist:
-        users_ddf = users_ddf.to_parquet(
+        users_ddf.to_parquet(
             ing.build_path(folderind="ba", filename="users", ext=".parquet", basepath=ing.REFINED_PATH))
     
     return users_ddf
