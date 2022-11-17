@@ -2,9 +2,9 @@
 
 ## Abstract
 ---
-We aim to naturally soft-cluster as many users frequenting the website as possible within a set of predefined cathegories based on user data. From there, we want to analyse how attractive the website is for each cathegory over the span of the data collection (2001 - 2017). Moreover, we aim to uncover the presence/absence of trends in user reviews and preferences per cathegory and on a finer granularity (for example, per country or state). The story we want to tell is that, based solely on user data, we can gain insight about what kind of users a website attracts and whether "natural user soft-clustering" could be a gateway to gain insight about hidden consumer or reviewer behavior.
+We aim to naturally soft-cluster as many users frequenting the website as possible within a set of predefined cathegories based on user data. From there, we want to analyse how attractive the website is for each cathegory over the span of the data collection (2001 - 2017). Moreover, we aim to uncover the presence/absence of trends in user reviews and preferences per cathegory and on a finer granularity (for example, per country or state). The story we want to tell is that, based solely on user data, we can gain insight about what kind of users a website attracts and whether "natural user soft-clustering"<sup>1</sup> could be a gateway to gain insight about hidden consumer or reviewer behavior.
 
-"natural user soft-clustering": users are clustered in a way such that the resulting clusters are interpretable by humans, instead of distance-based clustering seen in class.
+<sup>1</sup>"natural user soft-clustering": users are clustered in a way such that the resulting clusters are interpretable by humans, instead of distance-based clustering seen in class.
 
 ## Questions We Want To Address
 ---
