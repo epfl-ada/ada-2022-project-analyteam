@@ -28,6 +28,22 @@ FOLDERS = {
 }
 
 def build_path(folderind: str, filename: str, ext: str =".csv", basepath=BASE_PATH):
+    """
+    Build the file path
+
+    Args:
+        folderind (str): 
+            Folder indicator (a key of the dictionary FOLDERS)
+        filename (str):
+            The name of the file
+        ext (str) optiional:
+            The file extension - default = ".csv"
+        basepath (str) optinal:
+            The base of the file path - default = BASE_PATH
+            
+    Returns:
+        (str): The file path
+    """
     return "/".join([basepath, FOLDERS[folderind], filename + ext])
 
 ###################################################################
@@ -116,19 +132,15 @@ def read_parquet(
 # PARSING
 ###################################################################
 
-def _rating_vals_from(
-    rating_lines      : List[str], 
-    selected_tags     : List[str]):
-    """_summary_
-
+def _rating_vals_from(rating_lines: List[str], selected_tags: List[str]):
+    """
+    Builds and returns a dictionary mapping a tag to its value
     Args:
-        rating_lines (List[str]): _description_
-        selected_tags (List[str]): _description_
-        tokenizer (Tokenizer): _description_
-        sentiment_analyser (SentimentAnalyser): _description_
+        rating_lines (List[str]): a list of lines of the file ratings.txt (formatting known)
+        selected_tags (List[str]): a list of tags that will be selected
 
     Returns:
-        _type_: _description_
+        dict[str, str]: A dictionary mapping a tag to its value
     """
     # assumes that every line in rating_lines list has the format tag:value
     rating = {}
@@ -147,18 +159,18 @@ def _rating_vals_from(
     return rating
 
 def _next_rating(file):
-    """_summary_
+    """
+    COllects and returns the next rating of the .csv file
 
     Args:
-        file (_type_): _description_
+        file (_io.TextIOWrapper): the IO of the .csv file
 
     Returns:
-        _type_: _description_
+        List[str]: A list containing all the lines of the rating
     """
     # <> assumes that different ratings are spaced by at least one "\n"
     # but not necessarily exactly one "\n"
     # <> assumes that no comment has a "\n" in it
-    
     
     rating_started = False # indicates whether the while loop below has started reading a rating
     rating_lines = [] # the lines of one rating
@@ -182,19 +194,14 @@ def _next_rating(file):
         
     return rating_lines
 
-def txt2csv(
-    from_path      : str,
-    to_path        : str,
-    selected_tags  : List[str], 
-    all_tags       : List[str]):
-    """_summary_
-
+def txt2csv(from_path: str, to_path: str, selected_tags: List[str], all_tags: List[str]):
+    """
+    Converts and Writes a .txt file (having certain tags) to a .csv file (with only selected tags)
     Args:
-        from_path (str): _description_
-        to_path (str): _description_
-        selected_tags (List[str]): _description_
-        all_tags (List[str]): _description_
-        sentiment_sets (Tuple[List[str], List[str]]): _description_
+        from_path (str): path of the .txt file
+        to_path (str): path to the new .csv file
+        selected_tags (List[str]): a list of the tags to select to create the .csv file
+        all_tags (List[str]): a list of all the tags in the .txt file
     """
 
     assert not(to_path is None) and len(to_path) > 0
