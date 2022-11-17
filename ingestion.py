@@ -11,10 +11,6 @@ Author
 
 import dask.dataframe as dd
 
-from nlp import SentimentAnalyser, Tokenizer
-
-import datetime as dt
-
 import csv
 from typing import List
 
