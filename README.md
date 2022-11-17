@@ -1,17 +1,18 @@
-# AnalyTeam - Beer Reviews Dataset
+# BeerAdvocate.com, what kind of raters does the website attract ?
 
-## Title: Beer reviewers Categorization 
+## Abstract
+---
+We aim to naturally soft-cluster as many users frequenting the website as possible within a set of predefined cathegories based on user data. From there, we want to analyse how attractive the website is for each cathegory over the span of the data collection (2001 - 2017). Moreover, we aim to uncover the presence/absence of trends in user reviews and preferences per cathegory and on a finer granularity (for example, per country or state). The story we want to tell is that, based solely on user data, we can gain insight about what kind of users a website attracts and whether "natural user soft-clustering" could be a gateway to gain insight about hidden consumer or reviewer behavior.
 
-## Abstract: (A 150 word description of the project idea and goals. What’s the motivation behind your project? What story would you like to tell, and why?)
-Can we categorize user behavior/personalities with meaningful boundaries and extract trends from these groups? Using the beer review dataset, we want to extract relevant features in order to catagorize the users into some personnality classes, like *Adventurer*, *Free-thinker*, *Conformist*, *Beer-lover*, *Hard-to-please*,*Like the expert* ... 
+"natural user soft-clustering": users are clustered in a way such that the resulting clusters are interpretable by humans, instead of distance-based clustering seen in class.
 
-## Research Questions: A list of research questions you would like to address during the project.
-* How do we classify users?
-* Why is this classification backed up by data?
-* Why is this classification useful to understand the different types of user/useful for the site to categorize them? For example if a reviewer always give really higher rating than the average indicate it with a badge on their review called “Beer-lover”.
-* What trends can we extract from these different classification of users? 
+## Questions We Want To Address
+---
+* Does natural user soft-clustering help grasp and quantify the attractiveness of a website for each type of users ? Can we use this clustering to help breakdown and understand variations in the attractiveness of a website over time ?
+* Can natural user clustering help uncover hidden consumer/reviewer behavior ? In simpler terms, what can we tell about the users belonging to the same cathegory ? Are they vary similar in the language they use or the ratings they give ? Do cross-cathegory preferences in the same location vary significantly ? Can we build personas for each cathegory to help the website administrators better grasp the kind of users who frequent the website ?
 
 ## Design choices:
+---
 
 We would have liked to create a category for adventurers users aka users that try unusual beers.
 The idea was to use the number of rating per beer in order to compute the popularity of each bier score.
