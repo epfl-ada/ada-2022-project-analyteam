@@ -1,13 +1,15 @@
-# BeerAdvocate.com, what kind of raters does the website attract ?
+# beeradvocate.com, what kind of raters does the website attract ?
 
 ## Abstract
 ---
+
 We aim to naturally soft-cluster as many users frequenting the website as possible within a set of predefined cathegories based on user data. From there, we want to analyse how attractive the website is for each category over the span of the data collection (2001 - 2017). Moreover, we aim to uncover the presence/absence of trends in user reviews and preferences per category and on a finer granularity (for example, per country or state). The story we want to tell is that, based solely on user data, we can gain insight about what kind of users a website attracts and whether "natural user soft-clustering"<sup>1</sup> could be a gateway to gain insight about hidden consumer or reviewer behavior.
 
 <sup>1</sup>"natural user soft-clustering": users are clustered in a way such that the resulting clusters are interpretable by humans, instead of distance-based clustering seen in class.
 
 ## Questions We Want To Address
 ---
+
 * Does natural user soft-clustering help grasp and quantify the attractiveness of a website for each type of users ? Can we use this clustering to help breakdown and understand variations in the attractiveness of a website over time ?
 * Can natural user clustering help uncover hidden consumer/reviewer behavior ? In simpler terms, what can we tell about the users belonging to the same category ? Are they very similar in the language they use or the ratings they give ? Do cross-category preferences in the same location vary significantly ? Can we build personas for each category to help the website administrators better grasp the kind of users who frequent the website ?
 
@@ -26,9 +28,19 @@ That is why we've decided to forget about users like user x that varied drastica
 ## Proposed timeline
 ---
 - **18 Nov 2022:** Project milestone P2
+- **19-25 Nov 2022:** Break from the project to work on Homework 2.
+- **26-02 Nov 2022:** 
+  - Categorize the users based on the scores above. 
+  - Sentiment Analysis on textual reviews.
 - **02 Dec 2022:** Homework 2 dealine
+- **02-09 Dec 2022:**
+  - 
+  - Temporal analysis of when the (categorized) users join the website.
+- **16-23 Dec 2022:**
+  -  
 - **23 Dec 2022:** Project milestone P3 
 
 ## Organization within the team: A list of internal milestones up until project Milestone P3.
 
 ## Questions for TAs (optional): Add here any questions you have for us related to the proposed project.
+

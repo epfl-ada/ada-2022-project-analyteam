@@ -132,6 +132,8 @@ def read_parquet(
 # PARSING
 ###################################################################
 
+__REVIEW_TAG = "text"
+
 def _rating_vals_from(rating_lines: List[str], selected_tags: List[str]):
     """
     Builds and returns a dictionary mapping a tag to its value
@@ -154,6 +156,8 @@ def _rating_vals_from(rating_lines: List[str], selected_tags: List[str]):
         
         # write all selected tag values except for the review value, because it requires processing
         if tag in selected_tags:
+            if tag == __REVIEW_TAG:
+                value = value.replace(',', ';')    
             rating[tag] = value.strip() 
             
     return rating
