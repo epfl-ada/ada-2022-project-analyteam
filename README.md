@@ -14,16 +14,20 @@ We aim to naturally soft-cluster as many users frequenting the website as possib
 ## Design choices:
 ---
 
-We would have liked to create a category for adventurers users aka users that try unusual beers.
-The idea was to use the number of rating per beer in order to compute the popularity of each bier score.
-However there is a problem with this approche. Imagine a user has noted an unpopular beers 5 years ago that has now become popular this user will not be classified has adventurer. This is against the definition of adventurer has we've thought about it.
-So instead of taking the number of review for a beer we now take the number of review for this bier but in a 2 year timelaps in order to get a better adventurous score.
+We would like to create a category for adventurers users - aka users that try unusual beers.
+The idea was to use the number of ratings per beer to compute the popularity of each beer score.
+However, there is a problem with this approach. For instance if a user has noted an unpopular beer 5 years ago that has now become popular this user will not be classified has an adventurer. This is against the definition of an adventurer as we define it.
+So instead of taking the number of reviews for a beer, we now take the number of review for this beer but in a 2-year time-lapse in order to get a better adventurous score.
 
-One good point would have been to be able to detect user changing behavior with time. For exemple user x start giving none conventional rating but with time user x become more expert like. If we analyse user x over all his ratings he will no appear as expert like. However if we analyse user x in the last year he will clearly appear as expert like.
-In order to see this variations of user behavior we would have to analyse ratings in diffrent timelaps however we don't have that much rating per user and some timelaps might be quite empty because a user simply wasn't rating during this time. 
-That's why we've decided to forget about user like user x that varied drastically theyr behavior with time.
+One good point would have been to be able to detect user-changing behavior with time. For example, user x starts giving non-conventional rating but with time user x becomes more expert-like. If we analyse user x over all his ratings he will not appear as expert like. However, if we analyze user x in the last year he will clearly emerge as expert like.
+To see these variations of user behavior we would have to analyze ratings in different time-lapses. However, we don't have that much rating per user and some time-lapses might be pretty empty because a user simply wasn't rating during this time. 
+That is why we've decided to forget about users like user x that varied drastically their behavior with time.
 
 ## Proposed timeline
+---
+- **18 Nov 2022:** Project milestone P2
+- **02 Dec 2022:** Homework 2 dealine
+- **23 Dec 2022:** Project milestone P3 
 
 ## Organization within the team: A list of internal milestones up until project Milestone P3.
 
