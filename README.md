@@ -13,10 +13,13 @@ We aim to naturally soft-cluster the users within a set of predefined categories
 1. Does natural user soft-clustering gain insight on the attractiveness of a website?
 2. Can natural user clustering help uncover hidden consumer/reviewer behavior? What can we tell about the users belonging to the same category? Can we build personas for each category to help the administrators better grasp the kind of users who frequent the website?
 
-## [III] Approach
----
+## [III] Data
 
-Data exploration, analysis and processing of file * is in processing_*.ipynb
+Our working set is the set of files {users.csv, ratings.txt, beers.csv}. Data exploration, analysis and processing of file X is in processing_X.ipynb. We add a layer of processing on the available users.csv and beers.csv. Moreover, we parse ratings.txt to ratings.csv, and process it. Finally, we recompute our own version of beers.csv using the parsed ratings which is integrated with the available data of beers.csv. We prefer storing csv data in parquet format after processing.
+Find below the architecture (for reproducibility): "./Data/users.csv", "./Data/ratings.csv", "./Data/beers.csv"
+
+## [IV] Approach
+---
 
 We present the mathematical definitions of the most important categories but we will make sure to discuss the validity of the ones we do not mention here with our TA.
 
@@ -50,14 +53,14 @@ $$ ADV_u = \sum_{b \in B_u} \mathbb{1}\{r_b(t_{u,b}) < \frac{MAX}{2}\} $$
 
 This metric is higher for users that try out beers that have a bad rating. We want to know if the users frequenting the website are generally reluctant or willing to try out beers with bad ratings.
 
-## [IV] Limitations
+## [V] Limitations
 ---
 
 We do not account for the fact that a user could switch categories over time. All users are categorized as in or out of a category once using their total available data.
 
 While we have established via our exploratory data analysis that we can compute the above scores amongst others for almost all users from english speaking countries (US, Canada, England, Australia) knowing that the latter own more than 90% of ratings on beeradvocate.com, we can only approximate the true soft-clustering of these users based on the score distribution of each category independently. However, we believe that, under reasonable assumptions, we can approximate well enough the true classification for the purpose of our usecase. For example, we could consider that all users with an EXP score larger than the sum of the mean and standard deviation of this score are expert-like while the remaining are not.
 
-## [V] Proposed Timeline
+## [VI] Proposed Timeline
 ---
 
 - **18 Nov 2022:** Project milestone P2
@@ -78,7 +81,7 @@ While we have established via our exploratory data analysis that we can compute 
   - **task 4**: Work on the data story (webpage).
 - **23 Dec 2022:** Project milestone P3 
 
-## [VI] Organization
+## [VII] Organization
 ---
 
   | Full Name | GitHub ID | Task 1 | Task 2.1 | Task 2.2 | Task 2.3 | Task 2.4 | Task 2.5 | Task 3 | Task 4 |
