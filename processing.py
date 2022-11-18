@@ -23,6 +23,16 @@ __NAN_REGEX = r"[ ]*[nN][a][nN][ ]*"
 ##########################################################################
 
 def get_state(location: str):
+    """
+    Gets and returns the state (if the location is in USA)
+
+    Args:
+        location (str): the location
+
+    Returns:
+        str: the state if the location corresponds to __USA_REGEX, 
+            None otherwise
+    """
     if location is None:
         return None
     
@@ -30,13 +40,16 @@ def get_state(location: str):
         return location.split(sep=",")[1].strip()
 
 def get_country(location: str):
-    """_summary_
+    """
+    Gets and returns the country ("United States" if it corresponds to __USA_REGEX, 
+        None if there is no country and location otherwise)
 
     Args:
-        location (str): _description_
+        location (str): the location
 
     Returns:
-        _type_: _description_
+        str: the country ("United States" if it corresponds to __USA_REGEX, 
+            None if there is no country and location otherwise)
     """
     if location is None or re.match(pattern=__NAN_REGEX, string=location):
         return None
@@ -47,13 +60,14 @@ def get_country(location: str):
     return location
 
 def str_nan_to_none(text: str):
-    """_summary_
+    """
+    Change the NàN values to None
 
     Args:
-        text (str): _description_
+        text (str): the text
 
     Returns:
-        _type_: _description_
+        str: None if the text is NàN and otherwise text
     """
     if text is None:
         return None
@@ -64,10 +78,14 @@ def str_nan_to_none(text: str):
     return text
 
 def str_nan_to_nan(text: str):
-    """_summary_
+    """
+    Change the NàN/None values to np.nan values
 
     Args:
-        text (str): _description_
+        text (str): the text
+
+    Returns:
+        str: np.nan if the text is NàN/None and otherwise text
     """
     if text is None:
         return np.nan
@@ -75,7 +93,18 @@ def str_nan_to_nan(text: str):
     if re.match(pattern=__NAN_REGEX, string=text):
         return np.nan
 
+    return text
+
 def to_none_ifnot_str(elem: object):
+    """
+    Change the element of type not string to None
+
+    Args:
+        elem (object): the element to look at
+
+    Returns:
+        str: the elem if it is of type str, None if it is not
+    """
     if elem is None:
         return None
     
