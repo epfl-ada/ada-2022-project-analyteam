@@ -5,7 +5,7 @@
 
 We aim to naturally soft-cluster the users within a set of predefined categories. From there, we want to analyse how attractive the website is for each category. Moreover, we aim to uncover the presence/absence of trends in user data per category. Our story is, based solely on user data, we can gain insight about what kind of users a website attracts and whether "natural user soft-clustering"<sup>1</sup> could be a gateway to learn hidden consumer or reviewer behavior.
 
-<sup>1</sup>"natural user soft-clustering": This approach is "cluster together users that satisfy a human-interpretable condition" rather than "cluster together users that are similar based on a similarity metric". Because one user can satisfy many conditions at the same time and thus belong to many categories, the clustering is soft. See examples in section [[IV]](#[IV]-approach).
+<sup>1</sup>"natural user soft-clustering": This approach is "cluster together users that satisfy a human-interpretable condition" rather than "cluster together users that are similar based on a similarity metric". Because one user can satisfy many conditions at the same time and thus belong to many categories, the clustering is soft. See examples in section [IV].
 
 ## [II] Research Questions
 ---
