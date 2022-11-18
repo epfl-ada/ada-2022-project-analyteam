@@ -14,6 +14,9 @@ import transformers as trafos
 ###################################################################   
 
 class SentimentAnalyser:
+    """
+    Wrapper class. It wraps a Transformer for sentiment analysis.
+    """
     def __init__(self):
         self.__pipeline = trafos.pipeline(
             model="distilbert-base-uncased-finetuned-sst-2-english",
@@ -22,6 +25,15 @@ class SentimentAnalyser:
                 "distilbert-base-uncased"))
                                    
     def compute(self, text: str):
+        """
+        Computes the label and score of sentiment analysis on a string input.
+        
+        Args:
+            text (str): the input.
+        
+        Returns:
+            (Tuple[str, float]): the label "POSITIVE" or "NEGATIVE" and the corresponding score. 
+        """
         assert not(text is None) and len(text) > 0
         # text that is too long (its tokenization length exceeds the model's limit)
         # will be truncated
@@ -35,7 +47,9 @@ class SentimentAnalyser:
 ###################################################################
 
 class Tokenizer:
-    
+    """
+    Text Tokenizer used to tokenize strings for the purpose of vocabulary comparison.
+    """
     def __init__(self, language):
         self.__tokenizer = RegexpTokenizer(r'\w+')
         self.__lemmatizer = WordNetLemmatizer()
