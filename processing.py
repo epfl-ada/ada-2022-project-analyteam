@@ -113,13 +113,15 @@ __USERS_DTYPES = {
 }
 
 def users_pipeline(persist: bool =False):
-    """_summary_
+    """
+    Processes the users provided CSV file to generate a dataframe of users.
+    Optionally persists the generated dataframe in parquet format.
 
     Args:
-        persist (bool, optional): _description_. Defaults to False.
+        persist (bool, optional): Persist the dataframe of processed data. Defaults to False.
 
     Returns:
-        _type_: _description_
+        (dask.dataframe.Dataframe): The dataframe of processed data. 
     """
     # load the data
     users_ddf = ing.read_csv(
@@ -179,13 +181,20 @@ __COUNTRIES_OF_INTEREST = [
     "United States", "Canada", "England", "Australia"]
 
 def ratings_pipeline(persist: bool =False, **kwargs):
-    """_summary_
+    """
+    Processes the raw ratings.csv file produced by txt2csv.
+    It needs the resulting dataframe of users for its operations.
+    The resulting dataframe can be persisted in parquet format.
 
     Args:
-        users_ddf (_type_): _description_
+        persist (bool): Persist the resulting dataframe. Defaults to False.
+        
+    **kwargs:
+        users_persisted (bool): Load the users dataframe from memory. Defaults to False.
+        users (dask.dataframe.Dataframe): the dataframe of users. Ignored when users_persisted is True.
 
     Returns:
-        _type_: _description_
+        (dask.dataframe.Dataframe): The dataframe of processed data. 
     """
     users_persisted= kwargs.get("users_persisted", False)
     
@@ -217,7 +226,7 @@ def ratings_pipeline(persist: bool =False, **kwargs):
     # keep only ratings with computable beer rating
     # a beer rating is computable <=> all beer aspects' ratings are available
     # if the beer rating is available, do not drop the rating
-    computable_rating_mask = False # (False | X) == X
+    computable_rating_mask = True # (True & X) == X
     for rating_aspect in __RATING_ASPECTS:
         computable_rating_mask &= ratings_ddf[rating_aspect].notnull()
     ratings_ddf = ratings_ddf[computable_rating_mask | ratings_ddf.rating.notnull()]
@@ -372,7 +381,7 @@ def beers_pipeline(persist: bool =False, **kwargs):
     return beers_ddf
 
 #####################
-# sentiment pipeline
+# sentiment pipeline (MILESTONE 3)
 #####################
 
 __SENTIMENT_COLS = [
@@ -390,14 +399,6 @@ def sentiment_pipeline(ratings_ddf):
     """
     analyser = SentimentAnalyser()
     def pos_sentiment_in(text: str):
-        """_summary_
-
-        Args:
-            text (str): _description_
-
-        Returns:
-            _type_: _description_
-        """
         label, score = analyser.compute(text)
         return score if label == "POSITIVE" else 1 - score
     
@@ -414,35 +415,4 @@ def sentiment_pipeline(ratings_ddf):
     
     return sentiment_ddf
 
-################
-# data pipeline
-################
-
-def data_pipeline(mode: str ="lazy", with_sentiment: bool=False):
-    """_summary_
-
-    Args:
-        mode (str, optional): _description_. Defaults to "lazy".
-
-    Raises:
-        ValueError: _description_
-
-    Returns:
-        _type_: _description_
-    """
-    users_ddf = users_pipeline()
-    ratings_ddf = ratings_pipeline(users_ddf)
-    
-    
-    data = [users_ddf, ratings_ddf, beers_pipeline(ratings_ddf)]
-    if with_sentiment:
-        data.append(sentiment_pipeline(ratings_ddf))
-    
-    if mode == "lazy":
-        return data
-    
-    if mode == "eager":
-        return list(map(lambda d: d.compute(), data))
-    
-    raise ValueError("Mode (%s) is not supported. Supported modes are \"eager\" or \"lazy\"."%(mode))
         
