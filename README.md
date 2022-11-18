@@ -15,8 +15,7 @@ We aim to naturally soft-cluster the users within a set of predefined categories
 
 ## [III] Data
 
-Our working set is the set of files {users.csv, ratings.txt, beers.csv}. Data exploration, analysis and processing of file X is in processing_X.ipynb. We add a layer of processing on the available users.csv and beers.csv. Moreover, we parse ratings.txt to ratings.csv, and process it. Finally, we recompute our own version of beers.csv using the parsed ratings which is integrated with the available data of beers.csv. We prefer storing csv data in parquet format after processing.
-Find below the architecture (for reproducibility): "./Data/users.csv", "./Data/ratings.csv", "./Data/beers.csv"
+Our working set is the BeerAdvocate files {users.csv, ratings.txt, beers.csv}. Notebook processing_X.ipynb contains the exploratory and descriptive data analysis as well as the data processing we did. To reproduce our processed data directly from the raw data, please run reproducibility.py (may take around 2 hours because of the size of the files) and **make sure you follow the instructions in its docstring**. 
 
 ## [IV] Approach
 ---
@@ -48,13 +47,13 @@ $$ XPL_u = \sum_{b \in B_u} \mathbb{1}\{u \in U_{10}(b)\} $$
 
 This metric is larger for users that try out new beers that have not been in the spotlight (that is why they are explorators), and is low for users that almost always rate beers that have been already been rated many times before (in our case 10 times at least). This score provides us with information about which users contribute to enriching the experience on the website, either because they rate beers that do not get much attention, or because they "introduce" new beers on the website by being the first people to rate those beers.
 
-**Adventurer**: A user $u$ is an adventurer if he/she often rates a beer $b$ that has a low score at time $t_{u,b}$ at which he/she rates it, measured as follows where $MAX=5$ is the maximum score a beer can have: 
+**Adventurer**: A user $u$ is an adventurer if he/she often rates a beer $b$ that has a low score at time $t_{u,b}$ at which he/she rates it, measured as follows where $T$ is a threshold to be determined empirically (see next section):
 
-$$ ADV_u = \sum_{b \in B_u} \mathbb{1}\{r_b(t_{u,b}) < \frac{MAX}{2}\} $$
+$$ ADV_u = \sum_{b \in B_u} \mathbb{1}\{r_b(t_{u,b}) < T\} $$
 
 This metric is higher for users that try out beers that have a bad rating. We want to know if the users frequenting the website are generally reluctant or willing to try out beers with bad ratings.
 
-## [V] Limitations
+## [V] Soft-Clustering Limitations
 ---
 
 We do not account for the fact that a user could switch categories over time. All users are categorized as in or out of a category once using their total available data.
