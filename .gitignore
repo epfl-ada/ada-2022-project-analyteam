@@ -13,6 +13,5 @@ __pycache__
 
 # folders
 *Data
-test_files
-test
+test*
 *archive
