@@ -13,8 +13,10 @@ We aim to naturally soft-cluster the users within a set of predefined categories
 1. Does natural user soft-clustering gain insight on the attractiveness of a website?
 2. Can natural user clustering help uncover hidden consumer/reviewer behavior? What can we tell about the users belonging to the same category? Can we build personas for each category to help the administrators better grasp the kind of users who frequent the website?
 
-## [III] Mathematical Approach
+## [III] Approach
 ---
+
+Data exploration, analysis and processing of file * is in processing_*.ipynb
 
 We present the mathematical definitions of the most important categories but we will make sure to discuss the validity of the ones we do not mention here with our TA.
 
