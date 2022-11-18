@@ -113,13 +113,15 @@ __USERS_DTYPES = {
 }
 
 def users_pipeline(persist: bool =False):
-    """_summary_
+    """
+    Processes the users provided CSV file to generate a dataframe of users.
+    Optionally persists the generated dataframe in parquet format.
 
     Args:
-        persist (bool, optional): _description_. Defaults to False.
+        persist (bool, optional): Persist the dataframe of processed data. Defaults to False.
 
     Returns:
-        _type_: _description_
+        (dask.dataframe.Dataframe): The dataframe of processed data. 
     """
     # load the data
     users_ddf = ing.read_csv(
@@ -217,7 +219,7 @@ def ratings_pipeline(persist: bool =False, **kwargs):
     # keep only ratings with computable beer rating
     # a beer rating is computable <=> all beer aspects' ratings are available
     # if the beer rating is available, do not drop the rating
-    computable_rating_mask = False # (False | X) == X
+    computable_rating_mask = True # (True & X) == X
     for rating_aspect in __RATING_ASPECTS:
         computable_rating_mask &= ratings_ddf[rating_aspect].notnull()
     ratings_ddf = ratings_ddf[computable_rating_mask | ratings_ddf.rating.notnull()]
@@ -390,14 +392,6 @@ def sentiment_pipeline(ratings_ddf):
     """
     analyser = SentimentAnalyser()
     def pos_sentiment_in(text: str):
-        """_summary_
-
-        Args:
-            text (str): _description_
-
-        Returns:
-            _type_: _description_
-        """
         label, score = analyser.compute(text)
         return score if label == "POSITIVE" else 1 - score
     
