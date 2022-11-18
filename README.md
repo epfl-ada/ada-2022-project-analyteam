@@ -43,13 +43,13 @@ The score is large if, on average, the user rates beers close to the reference s
 
 **Explorator**: A user $u$ is an explorator if he/she has a high adventurer score defined as follows where $U_{10}(b)$ is the set of at most 10 users that first rated the beer $b$:
 
-$$ XPL_u = \sum_{b \in B_u} \mathbb{1}\{u \in U_{10}(b)\} $$
+$$ XPL_u = \sum_{b \in B_u} \mathbb{1} [u \in U_{10}(b)] $$
 
 This metric is larger for users that try out new beers that have not been in the spotlight (that is why they are explorators), and is low for users that almost always rate beers that have been already been rated many times before (in our case 10 times at least). This score provides us with information about which users contribute to enriching the experience on the website, either because they rate beers that do not get much attention, or because they "introduce" new beers on the website by being the first people to rate those beers.
 
 **Adventurer**: A user $u$ is an adventurer if he/she often rates a beer $b$ that has a low score at time $t_{u,b}$ at which he/she rates it, measured as follows where $T$ is a threshold to be determined empirically (see next section):
 
-$$ ADV_u = \sum_{b \in B_u} \mathbb{1}\{r_b(t_{u,b}) < T\} $$
+$$ ADV_u = \sum_{b \in B_u} \mathbb{1} [r_b(t_{u,b}) < T] $$
 
 This metric is higher for users that try out beers that have a bad rating. We want to know if the users frequenting the website are generally reluctant or willing to try out beers with bad ratings.
 
