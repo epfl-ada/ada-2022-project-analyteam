@@ -182,16 +182,14 @@ __COUNTRIES_OF_INTEREST = [
 
 def ratings_pipeline(persist: bool =False, **kwargs):
     """
-    Processes the raw ratings.csv file produced by txt2csv.
+    Processes the raw ratings.csv file into a dataframe.
     It needs the resulting dataframe of users for its operations.
     The resulting dataframe can be persisted in parquet format.
 
     Args:
         persist (bool): Persist the resulting dataframe. Defaults to False.
-        
-    **kwargs:
-        users_persisted (bool): Load the users dataframe from memory. Defaults to False.
-        users (dask.dataframe.Dataframe): the dataframe of users. Ignored when users_persisted is True.
+        users_persisted (bool, optional): Load the users dataframe from memory. Defaults to False.
+        users (dask.dataframe.Dataframe, optional): the dataframe of users. Ignored when users_persisted is True.
 
     Returns:
         (dask.dataframe.Dataframe): The dataframe of processed data. 
@@ -277,10 +275,15 @@ __BEERS_CSV_DTYPES = {
 }
 
 def beerscsv_pipeline(persist: bool =False):
-    """_summary_
+    """
+    Processes the users provided CSV file to generate a dataframe of users.
+    Optionally persists the generated dataframe in parquet format.
 
     Args:
-        persist (bool, optional): _description_. Defaults to False.
+        persist (bool, optional): Persist the dataframe of processed data. Defaults to False.
+
+    Returns:
+        (dask.dataframe.Dataframe): The dataframe of processed data. 
     """
     # load the data
     beerscsv_ddf = ing.read_csv(
@@ -324,13 +327,20 @@ __BEERS_COLS_ORDERED = [
     ]
 
 def beers_pipeline(persist: bool =False, **kwargs):
-    """_summary_
+    """
+    Reproduces a version of beers.csv with only relevant data using the processed ratings.
+    It needs the resulting (after processing) dataframe of ratings and that of the beers.csv for its operations.
+    The resulting dataframe can be persisted in parquet format.
 
     Args:
-        ratings_ddf (_type_): _description_
+        persist (bool): Persist the resulting dataframe. Defaults to False.
+        ratings_persisted (bool, optional): Load the ratings dataframe from memory. Defaults to False.
+        ratings (dask.dataframe.Dataframe, optional): the dataframe of ratings. Ignored when users_persisted is True.
+        beerscsv_persisted (bool, optional): Load the dataframe resulting from processing beers.csv from memory. 
+        Defaults to False, in which case processed beers.csv dataframe is computed.
 
     Returns:
-        _type_: _description_
+        (dask.dataframe.Dataframe): The dataframe of processed data. 
     """
     # load the data
     ratings_pesisted = kwargs.get("ratings_persisted", False)
@@ -341,7 +351,7 @@ def beers_pipeline(persist: bool =False, **kwargs):
             path=ing.build_path("ba", "ratings", ext=".parquet", basepath=ing.REFINED_PATH),
             mode="lazy")
     else:
-        ratings_ddf = kwargs["ddf"]
+        ratings_ddf = kwargs["ratings"]
         
     # group by beer id the selected features
     beers_base_ddf = ratings_ddf[__BEERS_COLS_FROM_RATINGS].groupby("bid")
@@ -381,7 +391,7 @@ def beers_pipeline(persist: bool =False, **kwargs):
     return beers_ddf
 
 #####################
-# sentiment pipeline (MILESTONE 3)
+# sentiment pipeline
 #####################
 
 __SENTIMENT_COLS = [
@@ -389,13 +399,8 @@ __SENTIMENT_COLS = [
 ]
 
 def sentiment_pipeline(ratings_ddf):
-    """_summary_
-
-    Args:
-        ratings_ddf (_type_): _description_
-
-    Returns:
-        _type_: _description_
+    """
+    This is a milestone 3 pipeline for sentiment analysis of textual reviews.
     """
     analyser = SentimentAnalyser()
     def pos_sentiment_in(text: str):
