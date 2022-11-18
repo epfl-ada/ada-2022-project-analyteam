@@ -7,13 +7,13 @@ We aim to naturally soft-cluster the users within a set of predefined categories
 
 <sup>1</sup>"natural user soft-clustering": This approach is "cluster together users that satisfy a human-interpretable condition" rather than "cluster together users that are similar based on a similarity metric". Because one user can satisfy many conditions at the same time and thus belong to many categories, the clustering is soft. See examples in section [III].
 
-## [III] Research Questions
+## [II] Research Questions
 ---
 
 1. Does natural user soft-clustering gain insight on the attractiveness of a website?
 2. Can natural user clustering help uncover hidden consumer/reviewer behavior? What can we tell about the users belonging to the same category? Can we build personas for each category to help the administrators better grasp the kind of users who frequent the website?
 
-## [IV] Mathematical Approach
+## [III] Mathematical Approach
 ---
 
 We present the mathematical definitions of the most important categories but we will make sure to discuss the validity of the ones we do not mention here with our TA.
@@ -43,19 +43,19 @@ $$ XPL_u = \sum_{b \in B_u} \mathbb{1}\{u \in U_{10}(b)\} $$
 
 This metric is larger for users that try out new beers that have not been in the spotlight (that is why they are explorators), and is low for users that almost always rate beers that have been already been rated many times before (in our case 10 times at least). This score provides us with information about which users contribute to enriching the experience on the website, either because they rate beers that do not get much attention, or because they "introduce" new beers on the website by being the first people to rate those beers.
 
-**Adventurer**: A user $u$ is an adventurer if he/she often rates a beer $b$ that has a low score at time $t_{u,b}$ at which he/she rate it, measured as follows where $MAX=5$ is the maximum score a beer can have: 
+**Adventurer**: A user $u$ is an adventurer if he/she often rates a beer $b$ that has a low score at time $t_{u,b}$ at which he/she rates it, measured as follows where $MAX=5$ is the maximum score a beer can have: 
 $$ ADV_u = \sum_{b \in B_u} \mathbb{1}\{r_b(t_{u,b}) < \frac{MAX}{2}\} $$
 
 This metric is higher for users that try out beers that have a bad rating. We want to know if the users frequenting the website are generally reluctant or willing to try out beers with bad ratings.
 
-## [V] Limitations
+## [IV] Limitations
 ---
 
 We do not account for the fact that a user could switch categories over time. All users are categorized as in or out of a category once using their total available data.
 
-While we will not have any issues computing our clustering metrics as per our descriptive analysis, we can only guess how many users fit in a category given the score distribution of that category. For instance, consider all users with an EXP score above the 95th percentile to be expert-like. However, we believe that under reasonable assumptions, and by studying the distribution of each score, we can approximate well enough the true classification of users for the purpose of our usecase.
+While we have established via our exploratory data analysis that we can compute the above scores amongst others for almost all users from english speaking countries (US, Canada, England, Australia) knowing that the latter own more than 90% of ratings on beeradvocate.com, we can only approximate the true soft-clustering of these users based on the score distribution of each category independently. However, we believe that, under reasonable assumptions, we can approximate well enough the true classification for the purpose of our usecase. For example, we could consider that all users with an EXP score larger than the sum of the mean and standard deviation of this score are expert-like while the remaining are not.
 
-## [VI] Proposed Timeline
+## [V] Proposed Timeline
 ---
 
 - **18 Nov 2022:** Project milestone P2
@@ -76,7 +76,7 @@ While we will not have any issues computing our clustering metrics as per our de
   - **task 4**: Work on the data story (webpage).
 - **23 Dec 2022:** Project milestone P3 
 
-## [VII] Organization
+## [VI] Organization
 ---
 
   | Full Name | GitHub ID | Task 1 | Task 2.1 | Task 2.2 | Task 2.3 | Task 2.4 | Task 2.5 | Task 3 | Task 4 |
