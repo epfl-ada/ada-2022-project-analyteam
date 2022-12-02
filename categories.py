@@ -29,7 +29,21 @@ class Categorization():
     def _avg_at_date(self):
         a = self.ratings_ddf[["date", "uid", "bid", "rating"]]
 
-
+    def _beers_associated_with_user(self):
+        self.associated_beers=self.ratings_ddf.groupby('uid')['bid'].apply(list).reset_index('associated_beers')
+    def _ratings_orders(self):
+        
+        self.ratings_ddf=self.ratings_ddf.sort_values(['bid','date'])
+        self.rantings_dff['rank']=0
+        i=1
+        bid2=0
+        for rating in self.ratings_ddf:
+            bid1=rating['bid']
+            if bid1!=bid2:
+                i=1
+            rating['rank']=i
+            i+=1
+            bid2=bid1
 
     def __init__(self, ratings_parquets_path, beers_parquet_path, users_parquet_path):
         self.ratings_ddf = ing.read_parquet(ratings_parquets_path)
@@ -45,8 +59,10 @@ class Categorization():
         print("USERS DDF")
         #print(self.users_ddf.head(3))
         print("---------------------------------------------")
-
-        self._std()
+        self._ratings_orders()
+        #self._beers_associated_with_user()
+       # self._std()
+        
         print(self.beers_ddf.head(2))
         
 
@@ -55,22 +71,22 @@ class Categorization():
 
 
     def get_all_scores(self, user_id):
-        beers_associated_list = self._beers_associated_with_user(user_id)
+        self.user=self.users_ddf['uid'==user_id]
+        self.beers=self.beers_ddf[self.beers_ddf['bid'].isin(self.user['associated_list'])]
+        
+        summation = 0
 
-        conformist_score = self.get_conformist_score(user_id, beers_associated_list=beers_associated_list)
-        adventurer_score = self.get_adventurer_score(user_id, beers_associated_list=beers_associated_list)
-        expertlike_score = self.get_expertlike_score(user_id, beers_associated_list=beers_associated_list)
-        explorer_score = self.get_explorer_score(user_id, beers_associated_list=beers_associated_list)
+        conformist_score = self.get_conformist_score(user_id)
+        adventurer_score = self.get_adventurer_score(user_id)
+        expertlike_score = self.get_expertlike_score(user_id)
+        explorer_score = self.get_explorer_score(user_id)
 
         return conformist_score, adventurer_score, expertlike_score, explorer_score
 
 
-    def get_conformist_score(self, user_id, beers_associated_list=None):
-        if beers_associated_list is None:
-            beers_associated_list = self._beers_associated_with_user(user_id)
+    def get_conformist_score(self, user_id):
 
-        summation = 0
-        for beer_id in beers_associated_list: # iterate over all the beers rated by the user
+        for beer_id in self.associated_beers['uid']: # iterate over all the beers rated by the user
             std = self.beers_ddf.loc[self.beers_ddf["bid"] == beer_id]["std"]
             std = list(std)[0] if len(std.items) > 0 else 0
             if std != 0: # no point measuring conformity score over beers that have a single rating 
@@ -81,27 +97,20 @@ class Categorization():
                 r_u_b = list(r_u_b)[0] if len(r_u_b) > 0 else r_b
                 summation += ((r_u_b - r_b)/std)**2
 
-        return summation / len(beers_associated_list)
+        return summation / len(self.associated_beers['uid'])
 
 
-    def get_adventurer_score(self, user_id, beers_associated_list=None):
-        t = time.time()
+    def get_adventurer_score(self, user_id):
+
 
         print("ADVENTURER SCORE FOR ", user_id)
 
-        if beers_associated_list is None:
-            beers_associated_list = self._beers_associated_with_user(user_id)
-
-        print("   time prep user : ", time.time()-t)
-
-        summation = 0
-
         t=time.time()
-        ratings_of_beers_dated = self.ratings_ddf.loc[self.ratings_ddf["bid"].isin(beers_associated_list)][["date", "uid", "bid", "rating"]].compute()
+        ratings_of_beers_dated = self.ratings_ddf.loc[self.ratings_ddf["bid"].isin(self.associated_beers['uid'].compute())][["date", "uid", "bid", "rating"]].compute()
         print("   time ratings for all beers for user : ", time.time()-t)
 
         t = time.time()
-        for beer_id in beers_associated_list:
+        for beer_id in self.associated_beers['uid']:
             
             ratings_of_beer_dated = ratings_of_beers_dated.loc[ratings_of_beers_dated["bid"] == beer_id][["date", "uid", "rating"]]
             
@@ -122,45 +131,10 @@ class Categorization():
         return summation
 
 
-    """def get_adventurer_score(self, user_id, beers_associated_list=None):
-        t = time.time()
-
-        print("ADVENTURER SCORE FOR ", user_id)
-
-        if beers_associated_list is None:
-            beers_associated_list = self._beers_associated_with_user(user_id)
-
-        print("   time prep user : ", time.time()-t)
+    def get_expertlike_score(self, user_id):
 
         summation = 0
-        for beer_id in beers_associated_list:
-            
-            t = time.time()
-            ratings_of_beer_dated = self.ratings_ddf.loc[self.ratings_ddf["bid"] == beer_id][["date", "uid", "rating"]].compute()
-            print("   time elapse 1: ", time.time()-t)
-            
-            review_time_of_user = ratings_of_beer_dated.loc[ratings_of_beer_dated["uid"] == user_id]["date"]
-            review_time_of_user_list = list(review_time_of_user)
-
-            if len(review_time_of_user_list) > 0 : # takes a long time 15 sec
-                review_time_of_user = review_time_of_user_list[0] # takes very long time 30 sec
-                ratings_of_beer_dated = ratings_of_beer_dated.loc[ratings_of_beer_dated["date"] < review_time_of_user]["rating"]
-                avg_ratings_of_beer_dated = sum(list(map(int,ratings_of_beer_dated))) # takes long time 15 sec
-                #print("   Review time of user :",review_time_of_user)
-                #print("   Number of beers rated before user : ", ratings_of_beer_dated.size.compute())
-                #print("   avg ratings of beer dated : ", avg_ratings_of_beer_dated)
-                if ratings_of_beer_dated.size > 0 and avg_ratings_of_beer_dated < T: # takes a very long time 30 sec
-                    summation += 1
-        return summation
-
-    """
-
-    def get_expertlike_score(self, user_id, beers_associated_list=None):
-        if beers_associated_list is None:
-            beers_associated_list = self._beers_associated_with_user(user_id)
-
-        summation = 0
-        for beer_id in beers_associated_list:
+        for beer_id in self.associated_beers['uid']:
             std = self.beers_ddf.loc[self.beers_ddf["bid"] == beer_id]["std"]
             std = list(std)[0] if len(std.items) > 0 else 0
             if std != 0: # no point measuring exper_like score over beers that have a single rating 
@@ -172,23 +146,18 @@ class Categorization():
                 r_u_b = list(r_u_b)[0] if len(r_u_b) > 0 else r_b
                 summation += ((r_u_b - ref)/std)**2
 
-        return len(beers_associated_list) / summation
+        return len(self.associated_beers['uid']) / summation
 
 
-    def get_explorer_score(self, user_id, beers_associated_list=None):
+    def get_explorer_score(self, user_id):
         print("EXPLORER SCORE FOR USER ", user_id)
         t = time.time()
-        if beers_associated_list is None:
-            beers_associated_list = self._beers_associated_with_user(user_id)
-        print("   Time prep user beers : ", time.time()-t)
-
-        t = time.time()
-        sorted_dates_userId_beerId = self.ratings_ddf.loc[self.ratings_ddf["bid"].isin(beers_associated_list)][["uid","bid","date"]].sort_values("date").compute()
+        sorted_dates_userId_beerId = self.ratings_ddf.loc[self.ratings_ddf["bid"].isin(self.associated_beers['uid'].compute())][["uid","bid","date"]].sort_values("date").compute()
         print("   Time for all beers id :", time.time()-t)
 
         t = time.time()
         summation = 0
-        for beer_id in beers_associated_list:
+        for beer_id in self.associated_beers['uid']:
             sorted_dates_userId = sorted_dates_userId_beerId.loc[sorted_dates_userId_beerId["bid"] == beer_id][["uid","date"]].sort_values("date")
             sorted_userId = list(sorted_dates_userId["uid"])
             
@@ -199,6 +168,5 @@ class Categorization():
         return summation
 
     
-    def _beers_associated_with_user(self, user_id):
-        return list(self.ratings_ddf.loc[self.ratings_ddf["uid"] == user_id]["bid"])
+    
         
