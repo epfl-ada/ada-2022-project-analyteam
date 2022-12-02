@@ -443,10 +443,38 @@ def sentiment_pipeline(ratings_ddf):
     sentiment_ddf["s-"] = 0
     # compute and set sentiment for ratings with reviews
     with_reviews = sentiment_ddf["has_review"]
+
+    # line to optimize using batch processing (batch inference)
     sentiment_ddf[with_reviews, "s+"] = sentiment_ddf[with_reviews, "review"].apply(
         pos_sentiment_in, meta=("review", "float32"))
     sentiment_ddf[with_reviews, "s-"] = 1 - sentiment_ddf[with_reviews, "s+"] 
     
     return sentiment_ddf
+
+def batch_sentiment_pipeline(ratings_ddf):
+    """
+    Same as sentiment_pipeline but using batch processing.
+    """
+    analyser = SentimentAnalyser()
+        # select columns of interest
+    sentiment_ddf = ratings_ddf[__SENTIMENT_COLS]
+    # initialize sentiment
+    sentiment_ddf["s+"] = 0
+    sentiment_ddf["s-"] = 0    
+    def pos_sentiment_in(reviews):
+        #label, score = analyser.compute(text)
+        labels_scores = analyser.compute_batch(reviews)
+        pos_sentiments = [score if label == "POSITIVE" else 1 - score for label, score in labels_scores]
+        return pos_sentiments
+
+    # compute and set sentiment for ratings with reviews
+    with_reviews = sentiment_ddf["has_review"]
+    reviews = sentiment_ddf[with_reviews, "review"].values().compute()
+    pos_sentiments = pos_sentiment_in(reviews)
+
+    sentiment_ddf[with_reviews, "s+"] = pos_sentiments
+    sentiment_ddf[with_reviews, "s-"] = 1 - sentiment_ddf[with_reviews, "s+"] 
+    
+
 
         

@@ -41,6 +41,23 @@ class SentimentAnalyser:
         sentiment = sentiment[0] # for a text input, there will be one result in the list
         
         return sentiment["label"], sentiment["score"]
+    
+    def batch_compute(self, texts):
+        """
+        Computes the label and score of sentiment analysis on a list of string inputs.
+        
+        Args:
+            texts (List[str]): the list of inputs.
+        
+        Returns:
+            (List[Tuple[str, float]]): the list of labels "POSITIVE" or "NEGATIVE" and the corresponding scores. 
+        """
+        assert not(texts is None) and len(texts) > 0
+        # text that is too long (its tokenization length exceeds the model's limit)
+        # will be truncated
+        sentiments = self.__pipeline(texts, truncation=True, device=0)
+
+        return [(sentiment["label"], sentiment["score"]) for sentiment in sentiments]
 
 ###################################################################
 # TOKENIZER
