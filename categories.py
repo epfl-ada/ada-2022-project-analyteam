@@ -24,47 +24,96 @@ class Categorization():
                 self.beers_ddf,
                 std_score,
                 how="inner", left_on="bid", right_on="bid")
-        self.beers_ddf['std_rating']=self.beers_ddf.apply(lambda beers : 0 if (beers['n_reviews']==0 or beers['n_reviews']==1) else np.sqrt(beers['std_rating']/beers['n_reviews']),axis=1,meta=('x', 'f8'))
+        self.beers_ddf['std_rating']=self.beers_ddf.apply(lambda beers : 0 if (beers['n_ratings']==0 or beers['n_ratings']==1) else np.sqrt(beers['std_rating']/beers['n_ratings']),axis=1)#,meta=('x', 'f8'))
     
     def _avg_at_date(self):
         a = self.ratings_ddf[["date", "uid", "bid", "rating"]]
 
     def _beers_associated_with_user(self):
-        self.associated_beers=self.ratings_ddf.groupby('uid')['bid'].apply(list).reset_index('associated_beers')
-    def _ratings_orders(self):
+        # self.associated_beers=self.ratings_ddf.groupby('uid')['bid'].apply(list).reset_index('associated_beers')
+        self.associated_beers=self.ratings_ddf.groupby('uid').apply(list)['bid'].reset_index('associated_beers')
         
-        self.ratings_ddf=self.ratings_ddf.sort_values(['bid','date'])
-        self.rantings_dff['rank']=0
-        i=1
-        bid2=0
-        for rating in self.ratings_ddf:
-            bid1=rating['bid']
-            if bid1!=bid2:
-                i=1
-            rating['rank']=i
-            i+=1
-            bid2=bid1
 
-    def __init__(self, ratings_parquets_path, beers_parquet_path, users_parquet_path):
-        self.ratings_ddf = ing.read_parquet(ratings_parquets_path)
+    def _ratings_dated(self):
+        dated_ratings_str = "dated_rating"
+        
+        self.ratings_ddf = self.ratings_ddf.sort_values(['bid','date'])
+        self.ratings_ddf[dated_ratings_str] = -1
+
+        previous_bid = -1
+        summation = 0
+        number = 0
+        for index, row in self.ratings_ddf.iterrows():
+            if previous_bid != row['bid']:
+                number = 0
+                summation = 0
+
+            number += 1
+            summation += row["rating"]
+            self.ratings_ddf.at[index, dated_ratings_str] = summation / number
+
+            #self.ratings_ddf[dated_ratings_str][index] = summation / number
+            previous_bid = row["bid"]
+
+
+    def _beers_per_user(self):
+        
+        #self.ratings_ddf=self.ratings_ddf.sort_values(['bid','date'])
+        self.ratings_ddf = self.ratings_ddf.sort_values(["uid"])
+
+        #previous_bid = self.ratings_ddf["bid"]
+        previous_uid = -1
+        beers_per_users = dict()
+        l = None
+        for _, row in self.ratings_ddf.iterrows():
+            if previous_uid != row['uid']:
+                if l is not None:
+                    beers_per_users[previous_uid] = l
+                    #beers_per_users.append((previous_uid, l))
+                l = []
+
+            l.append(row["bid"])
+            previous_uid = row["uid"]
+        return beers_per_users
+
+              
+
+    def __init__(self, ratings_parquets_path, beers_parquet_path, users_parquet_path, SIZE=300):
+        self.ratings_ddf = ing.read_parquet(ratings_parquets_path)[["date", "uid", "bid","rating"]].compute()
+        
+        #self.ratings_ddf = self.ratings_ddf.head(SIZE)
         self.ratings_ddf.set_index("bid")
-        print("RATINGS DDF")
-        #print(self.ratings_ddf.head(3))
-        print("---------------------------------------------")
-        self.beers_ddf = pd.read_parquet(beers_parquet_path)
-        print("BEERS DDF")
-        #print(self.beers_ddf.head(3))
-        print("---------------------------------------------")
-        self.users_ddf = pd.read_parquet(users_parquet_path)
-        print("USERS DDF")
-        #print(self.users_ddf.head(3))
-        print("---------------------------------------------")
-        self._ratings_orders()
-        #self._beers_associated_with_user()
-       # self._std()
+        print("ratings loaded")
+
+        self.beers_ddf = pd.read_parquet(beers_parquet_path)[["bid", "n_ratings", "avg_rating", "ba_score", "abv"]]
+        #self.beers_ddf = self.beers_ddf.head(SIZE)
+        print("beers loaded")
         
-        print(self.beers_ddf.head(2))
+        self.users_ddf = pd.read_parquet(users_parquet_path)[["uid"]]
+        #self.users_ddf = self.users_ddf.head(SIZE)
+        print("users loaded")
+
+        t = time.time()
+        self.beers_per_users = self._beers_per_user()
+        print("beers per user (", time.time()-t,")")
         
+        t = time.time()
+        self._std()
+        print("std (", time.time()-t,")")
+        
+        t = time.time()
+        self._ratings_dated()
+        print("ratings dated (", time.time()-t,")")
+
+        
+    def get_ratings_head(self, h = 30):
+        return self.ratings_ddf.sort_values(by="bid").head(h)
+
+    def get_beers_head(self, h=30):
+        return self.beers_ddf.sort_values(by="bid").head(h)
+    
+    def get_users_head(self, h=30):
+        return self.users_ddf.head(h)
 
     def get_userIds_list(self):
         return list(self.users_ddf["uid"])
@@ -86,18 +135,34 @@ class Categorization():
 
     def get_conformist_score(self, user_id):
 
-        for beer_id in self.associated_beers['uid']: # iterate over all the beers rated by the user
-            std = self.beers_ddf.loc[self.beers_ddf["bid"] == beer_id]["std"]
-            std = list(std)[0] if len(std.items) > 0 else 0
+        #for beer_id in self.associated_beers['uid']: # iterate over all the beers rated by the user
+        self.beers_ddf.sort_values(by="bid")
+        
+        for beer_id in self.beers_per_users[user_id]:
+            beer_with_id = self.beers_ddf.loc[self.beers_ddf["bid"] == beer_id][["std", "avg_rating"]]
+            std = list(beer_with_id["std"])
+            std = std[0] if len(std) > 0 else 0
             if std != 0: # no point measuring conformity score over beers that have a single rating 
-                r_b = self.beers_ddf.loc[self.beers_ddf["bid"]]["avg_rating"]
-                r_b = list(r_b)[0] if len(r_b.items) > 0 else 0
+                r_b = list(beer_with_id["avg_rating"])
+                r_b = r_b[0] if len(r_b) > 0 else 0
                 
-                r_u_b = self.ratings_ddf.loc[self.beers_ddf["bid"] == beer_id].loc[self.beers_ddf["uid"] == user_id]
+                r_u_b = self.ratings_ddf.loc[self.ratings_ddf["bid"] == beer_id].loc[self.ratings_ddf["uid"] == user_id]
                 r_u_b = list(r_u_b)[0] if len(r_u_b) > 0 else r_b
                 summation += ((r_u_b - r_b)/std)**2
 
         return summation / len(self.associated_beers['uid'])
+
+
+    def get_adventurer_score2(self, user_id):
+        print("ADVENTURER SCORE FOR ", user_id)
+
+        for beer_id in self.beers_per_users[user_id]:
+            
+            rating_of_beer_dated = list(self.ratings_ddf.loc[self.ratings_ddf["bid"] == beer_id].loc[self.ratings_ddf["uid"] == user_id][[dated_rating]])
+            rating_of_beer_dated = rating_of_beer_dated[0] if len(rating_of_beer_dated) > 0 else np.inf
+            if rating_of_beer_dated < T:
+                summation += 1
+        return summation
 
 
     def get_adventurer_score(self, user_id):
@@ -106,7 +171,7 @@ class Categorization():
         print("ADVENTURER SCORE FOR ", user_id)
 
         t=time.time()
-        ratings_of_beers_dated = self.ratings_ddf.loc[self.ratings_ddf["bid"].isin(self.associated_beers['uid'].compute())][["date", "uid", "bid", "rating"]].compute()
+        ratings_of_beers_dated = self.ratings_ddf.loc[self.ratings_ddf["bid"].isin(self.associated_beers['uid'])][["date", "uid", "bid", "rating"]]
         print("   time ratings for all beers for user : ", time.time()-t)
 
         t = time.time()
@@ -152,7 +217,7 @@ class Categorization():
     def get_explorer_score(self, user_id):
         print("EXPLORER SCORE FOR USER ", user_id)
         t = time.time()
-        sorted_dates_userId_beerId = self.ratings_ddf.loc[self.ratings_ddf["bid"].isin(self.associated_beers['uid'].compute())][["uid","bid","date"]].sort_values("date").compute()
+        sorted_dates_userId_beerId = self.ratings_ddf.loc[self.ratings_ddf["bid"].isin(self.associated_beers['uid'])][["uid","bid","date"]].sort_values("date")
         print("   Time for all beers id :", time.time()-t)
 
         t = time.time()
