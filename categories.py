@@ -221,3 +221,18 @@ class Categorization():
         first_ratings = first_ratings.loc[first_ratings["uid"] == user_id]
         return len(first_ratings.index)
           
+    def get_explorer_score_for_all_users(self):
+        """
+        Computes and returns (as a list of int) the explorer score for all users 
+        Stores these values in a new column "xpl_score" in the dataframe users_ddf
+        """
+        grouped_ratings_ddf = self.ratings_ddf[["uid","rank"]]
+        grouped_ratings_ddf = grouped_ratings_ddf.loc[grouped_ratings_ddf["rank"] <= 10].groupby("uid").count()
+        grouped_ratings_table = grouped_ratings_ddf.reset_index()
+        self.users_ddf = ddf.merge(
+                        users_ddf,
+                        grouped_ratings_table,
+                        how="left", on='uid')
+        self.users_ddf = self.users_ddf.rename(columns={'rank': 'xpl_score'}).fillna(0)
+        self.users_ddf['xpl_score'] = self.users_ddf['xpl_score'].astype('Int64')
+        return self.users_ddf["xpl_score"]
