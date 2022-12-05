@@ -274,6 +274,8 @@ def ratings_pipeline(persist: bool =False, **kwargs):
     # convert "nan" values in "review" (new name for "text") to None
     ratings_ddf["review"] = ratings_ddf.review.apply(to_none_ifnot_str, meta=("review", "object"))
     
+    # add sentiment column
+    ratings_ddf = batch_sentiment_pipeline(ratings_ddf)
     # persist
     if persist:
         ratings_ddf.to_parquet(
@@ -456,21 +458,29 @@ def batch_sentiment_pipeline(ratings_ddf):
     Same as sentiment_pipeline but using batch processing.
     """
     analyser = SentimentAnalyser()
-        # select columns of interest
+    # select columns of interest
     sentiment_ddf = ratings_ddf[__SENTIMENT_COLS]
     # initialize sentiment
     sentiment_ddf["s+"] = 0
     sentiment_ddf["s-"] = 0    
-    def pos_sentiment_in(reviews):
+    def pos_sentiment_in(reviews: list[str]):
+        print(type(reviews))
+        print(reviews[:10])
         #label, score = analyser.compute(text)
-        labels_scores = analyser.compute_batch(reviews)
+        labels_scores = analyser.batch_compute(reviews)
         pos_sentiments = [score if label == "POSITIVE" else 1 - score for label, score in labels_scores]
+        print(pos_sentiments[:10])
         return pos_sentiments
 
     # compute and set sentiment for ratings with reviews
-    with_reviews = sentiment_ddf["has_review"]
-    reviews = sentiment_ddf[with_reviews, "review"].values().compute()
-    pos_sentiments = pos_sentiment_in(reviews)
+    # get first row of sentiment_ddf
+    print("correct_before")
+    with_reviews = sentiment_ddf[sentiment_ddf.has_review == True]
+    print("correct_before1")
+    reviews = with_reviews["review"]
+    print(reviews[0].compute())
+    print("correct_after1")
+    pos_sentiments = pos_sentiment_in(reviews.values.compute().tolist())
 
     sentiment_ddf[with_reviews, "s+"] = pos_sentiments
     sentiment_ddf[with_reviews, "s-"] = 1 - sentiment_ddf[with_reviews, "s+"] 
