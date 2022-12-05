@@ -2,135 +2,56 @@
 import dask.dataframe as ddf
 import pandas as pd
 import numpy as np
+from copy import copy
 
 import ingestion as ing
 
 import time
 
-T = 3 # TO CHANGE !!
+REFINED_PATH = "RefinedData"
+
+T = 3 
+
+BID_STR = "bid"
+UID_STR = "uid"
+RATING_STR = "rating"
+AVG_RATING_STR = "avg_rating"
+STD_RATING_STR = "std_rating"
+N_RATING_STR = "n_ratings"
+BA_SCORE_STR = "ba_score"
+BA_SCORE_BALANCED_STR = 'ba_score_balanced'
+DATE_STR = "date"
+
+RANK_STR = "rank"
+DATED_RATING_STR = "dated_rating"
+#ASSOCIATED_BEERS_STR = "associated_beers"
+
+CFM_SCORE_STR = "cfm_score"
+XPL_SCORE_STR = "xpl_score"
+EXP_SCORE_STR = "exp_score"
+ADV_SCORE_STR = "adv_score"
+
+IS_CFM_STR = "is_cfm"
+IS_XPL_STR = "is_xpl"
+IS_EXP_STR = "is_exp"
+IS_ADV_STR = "is_adv"
 
 class Categorization():
 
-    
-    def _std(self):
-        beerscsv_ddf_w_ratings_ddf = ddf.merge(
-            self.ratings_ddf,
-            self.beers_ddf, 
-            how="inner", left_on="bid", right_on="bid")
-
-        std_score=beerscsv_ddf_w_ratings_ddf.groupby('bid').apply(lambda beer,rating,avg_rating: sum((beer[rating] - beer[avg_rating])**2), 'rating', 'avg_rating').rename('std_rating').reset_index()
-        
-        self.beers_ddf = ddf.merge(
-                self.beers_ddf,
-                std_score,
-                how="inner", left_on="bid", right_on="bid")
-        self.beers_ddf['std_rating']=self.beers_ddf.apply(lambda beers : 0 if (beers['n_ratings']==0 or beers['n_ratings']==1) else np.sqrt(beers['std_rating']/beers['n_ratings']),axis=1)#,meta=('x', 'f8'))
-    
-
-    def _avg_at_date(self):
-        a = self.ratings_ddf[["date", "uid", "bid", "rating"]]
-
-    def _beers_associated_with_user(self):
-        # self.associated_beers=self.ratings_ddf.groupby('uid')['bid'].apply(list).reset_index('associated_beers')
-        self.associated_beers=self.ratings_ddf.groupby('uid').apply(list)['bid'].reset_index('associated_beers')
-        
-
-    def _ratings_dated2(self):        
-        self.ratings_ddf = self.ratings_ddf.sort_values(['bid','date'])
-
-        previous_bid = -1
-        summation = 0
-        number = 0
-        i = 0
-        t = time.time()
-        l_avg_ratings = []
-        l_rank = []
-        for index, row in self.ratings_ddf.iterrows():
-            if i % 1000000 == 0:
-                print("iteration ",i, "time",time.time()-t)
-            if previous_bid != row['bid']:
-                number = 0
-                summation = 0
-
-            number += 1
-            summation += row["rating"]
-            l_avg_ratings.append(summation / number)
-            l_rank.append(number)
-            #self.ratings_ddf.at[index, dated_ratings_str] = summation / number
-
-            #self.ratings_ddf[dated_ratings_str][index] = summation / number
-            previous_bid = row["bid"]
-
-            i += 1
-        print("end boucle")
-        self.ratings_ddf["dated_rating"] = l_avg_ratings
-        self.ratings_ddf["rank"] = l_rank
-
-        
-
-
-    def _ratings_dated(self):
-        dated_ratings_str = "dated_rating"
-        
-        self.ratings_ddf = self.ratings_ddf.sort_values(['bid','date'])
-        self.ratings_ddf[dated_ratings_str] = -1
-
-        previous_bid = -1
-        summation = 0
-        number = 0
-        for index, row in self.ratings_ddf.iterrows():
-            if previous_bid != row['bid']:
-                number = 0
-                summation = 0
-
-            number += 1
-            summation += row["rating"]
-            self.ratings_ddf.at[index, dated_ratings_str] = summation / number
-
-            #self.ratings_ddf[dated_ratings_str][index] = summation / number
-            previous_bid = row["bid"]
-
-
-    def _beers_per_user(self):
-        
-        #self.ratings_ddf=self.ratings_ddf.sort_values(['bid','date'])
-        self.ratings_ddf = self.ratings_ddf.sort_values(["uid"])
-
-        #previous_bid = self.ratings_ddf["bid"]
-        previous_uid = -1
-        beers_per_users = dict()
-        l = None
-        for _, row in self.ratings_ddf.iterrows():
-            if previous_uid != row['uid']:
-                if l is not None:
-                    beers_per_users[previous_uid] = l
-                    #beers_per_users.append((previous_uid, l))
-                l = []
-
-            l.append(row["bid"])
-            previous_uid = row["uid"]
-        return beers_per_users
-
-              
-
-    def __init__(self, ratings_parquets_path, beers_parquet_path, users_parquet_path, SIZE=300):
-        self.ratings_ddf = ing.read_parquet(ratings_parquets_path)[["date", "uid", "bid","rating"]].compute()
-        
-        #self.ratings_ddf = self.ratings_ddf.head(SIZE)
-        self.ratings_ddf.set_index("bid")
+    def __init__(self, ratings_parquets_path, beers_parquet_path, users_parquet_path):
+        self.ratings_ddf = ing.read_parquet(ratings_parquets_path)[[DATE_STR, UID_STR, BID_STR, RATING_STR]].compute()
+        self.ratings_ddf.set_index(BID_STR)
         print("ratings loaded")
 
-        self.beers_ddf = pd.read_parquet(beers_parquet_path)[["bid", "n_ratings", "avg_rating", "ba_score", "abv"]]
-        self.beers_ddf = self.beers_ddf.sort_values(by="bid")
-        #self.beers_ddf = self.beers_ddf.head(SIZE)
+        self.beers_ddf = pd.read_parquet(beers_parquet_path)[[BID_STR, N_RATING_STR, AVG_RATING_STR, BA_SCORE_STR]]
+        self.beers_ddf = self.beers_ddf.sort_values(by=BID_STR)
         print("beers loaded")
         
-        self.users_ddf = pd.read_parquet(users_parquet_path)[["uid"]]
-        #self.users_ddf = self.users_ddf.head(SIZE)
+        self.users_ddf = pd.read_parquet(users_parquet_path)
         print("users loaded")
 
         t = time.time()
-        self._ratings_dated2()
+        self._ratings_dated()
         print("ratings dated (", time.time()-t,")")
 
         t = time.time()
@@ -139,28 +60,200 @@ class Categorization():
         
         t = time.time()
         self._std()
+        self.ratings_beers_merge = ddf.merge(self.ratings_ddf, self.beers_ddf, how="inner", left_on=BID_STR, right_on=BID_STR)
+        self.ratings_beers_merge = self.ratings_beers_merge[self.ratings_beers_merge[STD_RATING_STR] != 0]
         print("std (", time.time()-t,")")
 
-        
-    def get_ratings_head(self, h = 30):
-        return self.ratings_ddf.sort_values(by="bid").head(h)
+        self.ratings_beers_merge[BA_SCORE_BALANCED_STR] = (self.ratings_beers_merge[BA_SCORE_STR] - self.ratings_beers_merge[BA_SCORE_STR].mean()) / self.ratings_beers_merge[BA_SCORE_STR].std() * self.ratings_beers_merge[RATING_STR].std() + self.ratings_beers_merge[RATING_STR].mean()
 
-    def get_beers_head(self, h=30):
-        return self.beers_ddf.sort_values(by="bid").head(h)
+
+    ### PREPROCESSING
     
-    def get_users_head(self, h=30):
-        return self.users_ddf.head(h)
+    def _std(self):
+        """
+        Adds one column in the dataframe beers_ddf which calculates the std rating of the beer
+        """   
+        beerscsv_ddf_w_ratings_ddf = ddf.merge(self.ratings_ddf, self.beers_ddf, how="inner", left_on=BID_STR, right_on=BID_STR)
+
+        std_score = beerscsv_ddf_w_ratings_ddf.groupby(BID_STR).apply(
+            lambda beer,rating,avg_rating: sum((beer[rating] - beer[avg_rating])**2), RATING_STR, AVG_RATING_STR).rename(STD_RATING_STR).reset_index()
+        
+        self.beers_ddf = ddf.merge(self.beers_ddf, std_score, how="inner", left_on=BID_STR, right_on=BID_STR)
+        self.beers_ddf[STD_RATING_STR]=self.beers_ddf.apply(
+            lambda beers : 0 if (beers[N_RATING_STR]==0 or beers[N_RATING_STR]==1) else np.sqrt(beers[STD_RATING_STR]/beers[N_RATING_STR]),axis=1)
+    
+
+    def _ratings_dated(self):    
+        """
+        Adds two columns in the dataframe ratings_ddf: one which calculates the average score of the beer at the time of the rating,
+        and the other one which calculates the time order of the rating (1 if it was the first rating on the beer for example)
+        """    
+        self.ratings_ddf = self.ratings_ddf.sort_values([BID_STR, DATE_STR])
+
+        previous_bid = -1
+        summation = 0
+        number = 0
+        l_avg_ratings = []
+        l_rank = []
+
+        for _, row in self.ratings_ddf.iterrows():
+            actual_bid = row['bid']
+            if previous_bid != actual_bid:
+                number = 0
+                summation = 0
+
+            number += 1
+            summation += row["rating"]
+
+            l_avg_ratings.append(summation / number)
+            l_rank.append(number)
+            
+            previous_bid = actual_bid
+
+        self.ratings_ddf["dated_rating"] = l_avg_ratings
+        self.ratings_ddf["rank"] = l_rank
+
+
+    def _beers_per_user(self):        
+        """
+        Creates and returns a dictionary with users as keys, and a list of beers rated with the user as value
+        """
+        self.ratings_ddf = self.ratings_ddf.sort_values(["uid"])
+
+        previous_uid = -1
+        beers_per_users = dict()
+        l = None
+        for _, row in self.ratings_ddf.iterrows():
+            actual_uid = row[UID_STR]
+            if previous_uid != actual_uid:
+                if l is not None:
+                    beers_per_users[previous_uid] = l
+                l = []
+            l.append(row[BID_STR])
+            previous_uid = actual_uid
+        return beers_per_users
+
+              
+    ### HELPERS
 
     def get_userIds_list(self):
         return list(self.users_ddf["uid"])
 
+    def compute_all_scores(self):
+        """
+        Computes all scores for all users, adds all the scores to the dataframe users_ddf, from these scores categorizes the users into the 
+        conformist, expert-like, explorer, and adventurer categories (by adding columns IS_CFM_STR, IS_EXP_STR, IS_XPL_STR, IS_ADV_STR to the dataframe users_ddf)
+        Writes the dataframe users_ddf as a .parquet file
+        Returns the dataframe users_ddf
+        """
+        self.get_all_scores()
+        self.categorize_all_users()
+        self.users_ddf.to_parquet(ing.build_path(folderind="ba", filename="users", ext=".parquet", basepath=ing.REFINED_PATH))
+        return self.users_ddf
 
-    def get_all_scores(self, user_id):
-        self.user=self.users_ddf['uid'==user_id]
-        self.beers=self.beers_ddf[self.beers_ddf['bid'].isin(self.user['associated_list'])]
+    def categorize_all_users(self):
+        quantile = self.users_ddf.quantile(0.9)
+        self.users_ddf[IS_CFM_STR] = np.where(self.users_ddf[CFM_SCORE_STR] > quantile[CFM_SCORE_STR], 1, 0)
+        self.users_ddf[IS_EXP_STR] = np.where(self.users_ddf[EXP_SCORE_STR] > quantile[EXP_SCORE_STR], 1, 0)
+        self.users_ddf[IS_XPL_STR] = np.where(self.users_ddf[XPL_SCORE_STR] > quantile[XPL_SCORE_STR], 1, 0)
+        self.users_ddf[IS_ADV_STR] = np.where(self.users_ddf[ADV_SCORE_STR] > quantile[ADV_SCORE_STR], 1, 0)
         
-        summation = 0
 
+    ### SCORE GETTERS
+
+    def get_all_scores(self):
+        """
+        Computes and returns (as a tuple of lists of int) all the scores for all users 
+        Stores these values in new columns CFM_SCORE_STR, EXP_SCORE_STR, XPL_SCORE_STR, ADV_SCORE_STR in the dataframe users_ddf
+        """
+        cfm_scores = self.get_cfm_scores()
+        exp_scores = self.get_exp_scores()
+        xpl_scores = self.get_xpl_scores()
+        adv_scores = self.get_adv_scores()
+
+        return cfm_scores, exp_scores, xpl_scores, adv_scores
+
+
+    def get_cfm_scores(self): 
+        """
+        Computes and returns (as a list of int) the conformist score for all users 
+        Stores these values in a new column CFM_SCORE_STR in the dataframe users_ddf
+        """
+        conformist_table = copy(self.ratings_beers_merge)
+
+        cmf_per_rating_str = 'cfm_per_rating'
+        conformist_table[cmf_per_rating_str] = ((conformist_table[RATING_STR] - conformist_table[AVG_RATING_STR]) / conformist_table[STD_RATING_STR])**2
+        conformist_table = conformist_table.groupby(UID_STR).mean()[cmf_per_rating_str].reset_index()
+        
+        self.users_ddf = ddf.merge(self.users_ddf, conformist_table, how="left", on='uid')
+        self.users_ddf = self.users_ddf.rename(columns={cmf_per_rating_str: CFM_SCORE_STR})
+        self.users_ddf[CFM_SCORE_STR] = 1 / self.users_ddf[CFM_SCORE_STR]
+
+        return self.users_ddf[CFM_SCORE_STR]
+
+
+    def get_exp_scores(self):
+        """
+        Computes and returns (as a list of int) the expert-like score for all users 
+        Stores these values in a new column EXP_SCORE_STR in the dataframe users_ddf
+        """
+        exp_per_rating_str = 'exp_per_rating'
+        self.ratings_beers_merge[exp_per_rating_str] = ((self.ratings_beers_merge[RATING_STR] - self.ratings_beers_merge[BA_SCORE_BALANCED_STR]) / self.ratings_beers_merge[STD_RATING_STR])**2
+
+        self.users_ddf = ddf.merge(self.users_ddf, self.ratings_beers_merge.groupby(UID_STR).mean()[exp_per_rating_str].reset_index(), how="left", on=UID_STR)
+        self.users_ddf = self.users_ddf.rename(columns={exp_per_rating_str: EXP_SCORE_STR})
+        self.users_ddf[EXP_SCORE_STR] = 1 / self.users_ddf[EXP_SCORE_STR]
+
+
+    def get_adv_scores(self):
+        """
+        Computes and returns (as a list of int) the adventurer score for all users 
+        Stores these values in a new column ADV_SCORE_STR in the dataframe users_ddf
+        """
+        adventurer_score_fast_table = self.ratings_ddf.loc[self.ratings_ddf[DATED_RATING_STR] < T].groupby(UID_STR).count()[[RANK_STR]]
+        adventurer_score_fast_table = adventurer_score_fast_table.reset_index()
+
+        self.users_ddf = ddf.merge(self.users_ddf, adventurer_score_fast_table, how="left", on=UID_STR)
+
+        self.users_ddf = self.users_ddf.rename(columns={RANK_STR: ADV_SCORE_STR}).fillna(0)
+        self.users_ddf[ADV_SCORE_STR] = self.users_ddf[ADV_SCORE_STR].astype('Int64')
+        return self.users_ddf[ADV_SCORE_STR]
+
+       
+    def get_xpl_scores(self):
+        """
+        Computes and returns (as a list of int) the explorer score for all users 
+        Stores these values in a new column XPL_SCORE_STR in the dataframe users_ddf
+        """
+        grouped_ratings_ddf = self.ratings_ddf[[UID_STR,RANK_STR]] # keep only selection of columns
+        grouped_ratings_ddf = grouped_ratings_ddf.loc[grouped_ratings_ddf[RANK_STR] <= 10].groupby(UID_STR).count()
+        # keep only ratings which rank is <= 10
+        grouped_ratings_table = grouped_ratings_ddf.reset_index()
+
+        self.users_ddf = ddf.merge(self.users_ddf, grouped_ratings_table, how="left", on=UID_STR)
+
+        self.users_ddf = self.users_ddf.rename(columns={RANK_STR: XPL_SCORE_STR}).fillna(0)
+        self.users_ddf[XPL_SCORE_STR] = self.users_ddf[XPL_SCORE_STR].astype('Int64')
+
+        return self.users_ddf[XPL_SCORE_STR]
+
+
+### UNUSED / TO DELETE 
+
+    def get_adventurer_score_for_user(self, user_id):
+        rating_of_user_dated = self.ratings_ddf.loc[self.ratings_ddf[dated_rating_str] < T]
+        rating_of_user_dated = rating_of_user_dated.loc[rating_of_user_dated["uid"] == user_id][[dated_rating_str]]
+        return len(rating_of_user_dated.index)
+
+
+    def get_explorer_score_for_user(self, user_id):
+        first_ratings = self.ratings_ddf.loc[self.ratings_ddf["rank"] <= 10][["uid"]]
+        first_ratings = first_ratings.loc[first_ratings["uid"] == user_id]
+        return len(first_ratings.index)
+
+
+    def get_all_scores_for_user(self, user_id):
+        
         conformist_score = self.get_conformist_score(user_id)
         adventurer_score = self.get_adventurer_score(user_id)
         expertlike_score = self.get_expertlike_score(user_id)
@@ -169,70 +262,17 @@ class Categorization():
         return conformist_score, adventurer_score, expertlike_score, explorer_score
 
 
-    def get_conformist_score(self, user_id): 
-        for beer_id in self.beers_per_users[user_id]:
-            beer_with_id = self.beers_ddf.loc[self.beers_ddf["bid"] == beer_id][["std", "avg_rating"]]
-            std = list(beer_with_id["std"])
-            std = std[0] if len(std) > 0 else 0
-            if std != 0: # no point measuring conformity score over beers that have a single rating 
-                r_b = list(beer_with_id["avg_rating"])
-                r_b = r_b[0] if len(r_b) > 0 else 0
-                
-                r_u_b = self.ratings_ddf.loc[self.ratings_ddf["bid"] == beer_id].loc[self.ratings_ddf["uid"] == user_id]
-                r_u_b = list(r_u_b)[0] if len(r_u_b) > 0 else r_b
-                summation += ((r_u_b - r_b)/std)**2
+    def _beers_associated_with_user(self):
+        # self.associated_beers=self.ratings_ddf.groupby('uid')['bid'].apply(list).reset_index('associated_beers')
+        self.associated_beers=self.ratings_ddf.groupby(UID_STR).apply(list)[BID_STR].reset_index(ASSOCIATED_BEERS_STR)
+            
+    
+    def get_ratings_head(self, h = 30):
+        return self.ratings_ddf.sort_values(by="bid").head(h)
 
-        return summation / len(self.associated_beers['uid'])
-
-
-    def get_adventurer_score(self): # for all users TODO
-        #rating_of_user_dated = self.ratings_ddf.loc[self.ratings_ddf["uid"] == user_id][["dated_rating"]]
-        #rating_of_user_dated = rating_of_user_dated.loc[rating_of_user_dated["dated_rating"] < T]
-        #return len(rating_of_user_dated.index)
-        return 
-
-
-    def get_adventurer_score_for_user(self, user_id):
-        rating_of_user_dated = self.ratings_ddf.loc[self.ratings_ddf["dated_rating"] < T]
-        rating_of_user_dated = rating_of_user_dated.loc[rating_of_user_dated["uid"] == user_id][["dated_rating"]]
-        return len(rating_of_user_dated.index)
-
-
-    def get_expertlike_score(self, user_id):
-
-        summation = 0
-        for beer_id in self.associated_beers['uid']:
-            std = self.beers_ddf.loc[self.beers_ddf["bid"] == beer_id]["std"]
-            std = list(std)[0] if len(std.items) > 0 else 0
-            if std != 0: # no point measuring exper_like score over beers that have a single rating 
-                ref = self.beers_ddf.loc[self.beers_ddf["bid"] == beer_id]["ba_score"]
-                # BA_score in [0, 100] and we want it in [0, 5]
-                ref = list(ref)[0]*(5/100) if len(ref.items) > 0 else 0 
-               
-                r_u_b = self.ratings_ddf.loc[self.beers_ddf["bid"] == beer_id].loc[self.beers_ddf["uid"] == user_id]
-                r_u_b = list(r_u_b)[0] if len(r_u_b) > 0 else r_b
-                summation += ((r_u_b - ref)/std)**2
-
-        return len(self.associated_beers['uid']) / summation
-
-
-    def get_explorer_score_for_user(self, user_id):
-        first_ratings = self.ratings_ddf.loc[self.ratings_ddf["rank"] <= 10][["uid"]]
-        first_ratings = first_ratings.loc[first_ratings["uid"] == user_id]
-        return len(first_ratings.index)
-          
-    def get_explorer_score_for_all_users(self):
-        """
-        Computes and returns (as a list of int) the explorer score for all users 
-        Stores these values in a new column "xpl_score" in the dataframe users_ddf
-        """
-        grouped_ratings_ddf = self.ratings_ddf[["uid","rank"]]
-        grouped_ratings_ddf = grouped_ratings_ddf.loc[grouped_ratings_ddf["rank"] <= 10].groupby("uid").count()
-        grouped_ratings_table = grouped_ratings_ddf.reset_index()
-        self.users_ddf = ddf.merge(
-                        users_ddf,
-                        grouped_ratings_table,
-                        how="left", on='uid')
-        self.users_ddf = self.users_ddf.rename(columns={'rank': 'xpl_score'}).fillna(0)
-        self.users_ddf['xpl_score'] = self.users_ddf['xpl_score'].astype('Int64')
-        return self.users_ddf["xpl_score"]
+    def get_beers_head(self, h=30):
+        return self.beers_ddf.sort_values(by="bid").head(h)
+    
+    def get_users_head(self, h=30):
+        return self.users_ddf.head(h)
+        
