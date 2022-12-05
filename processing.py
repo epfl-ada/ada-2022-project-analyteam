@@ -463,24 +463,21 @@ def batch_sentiment_pipeline(ratings_ddf):
     # initialize sentiment
     sentiment_ddf["s+"] = 0
     sentiment_ddf["s-"] = 0    
-    def pos_sentiment_in(reviews: list[str]):
-        print(type(reviews))
-        print(reviews[:10])
-        #label, score = analyser.compute(text)
+    def pos_sentiment_in(reviews):
+
+        # compute the sentiment of the reviews 
         labels_scores = analyser.batch_compute(reviews)
         pos_sentiments = [score if label == "POSITIVE" else 1 - score for label, score in labels_scores]
-        print(pos_sentiments[:10])
+
+        # pickle results!!!
         return pos_sentiments
 
-    # compute and set sentiment for ratings with reviews
-    # get first row of sentiment_ddf
-    print("correct_before")
+    # compute and set sentiment for ratings with reviews only
     with_reviews = sentiment_ddf[sentiment_ddf.has_review == True]
-    print("correct_before1")
     reviews = with_reviews["review"]
-    print(reviews[0].compute())
-    print("correct_after1")
-    pos_sentiments = pos_sentiment_in(reviews.values.compute().tolist())
+
+    # get sentiment analysis of ratings with a review
+    pos_sentiments = pos_sentiment_in(reviews)
 
     sentiment_ddf[with_reviews, "s+"] = pos_sentiments
     sentiment_ddf[with_reviews, "s-"] = 1 - sentiment_ddf[with_reviews, "s+"] 

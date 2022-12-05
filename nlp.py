@@ -10,6 +10,10 @@ from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
 import numpy as np
+from datasets import Dataset
+from transformers.pipelines.pt_utils import KeyDataset
+
+import pandas as pd
 
 import transformers as trafos
 
@@ -71,25 +75,22 @@ class SentimentAnalyser:
             (List[Tuple[str, float]]): the list of labels "POSITIVE" or "NEGATIVE" and the corresponding scores. 
         """
         assert not(texts is None) 
-        # text that is too long (its tokenization length exceeds the model's limit)
-        # will be truncated
+
         
         # use the GPU if available else use the CPU
         device = 0 if trafos.is_torch_available() else -1
-        print("TEXTS")
-        print(texts[0])
-        #dataset = RatingsDataset(texts)
-        #dataloader = DataLoader(dataset, batch_size=32, shuffle=False)
-        ds = 
-        print("DATASET")
-        print(dataset[0])
-        sentiments = np.array([])
-        for batch in tqdm(dataloader):
-            if cuda.is_available():
-                batch = batch.cuda()
-            sentiments = np.append(sentiments, self.__pipeline(batch, truncation=True))
-        #sentiments = self.__pipeline(texts, device, truncation=True)
 
+        # create a new dataframes with the texts
+        df = pd.DataFrame({"text": texts})
+
+        # create a dataset from the dataframe
+        dataset = Dataset.from_pandas(df)
+        sentiments = np.array([])
+
+        # process the ratings in batches, text that is too long (its tokenization length exceeds the model's limit)
+        # will be truncated
+        for out in tqdm(self.__pipeline(KeyDataset(dataset, "text"), truncation=True, batch_size=32)):
+            np.append(sentiments, out)
         return [(sentiment["label"], sentiment["score"]) for sentiment in sentiments]
 
 ###################################################################
