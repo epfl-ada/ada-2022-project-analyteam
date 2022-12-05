@@ -216,24 +216,8 @@ class Categorization():
         return len(self.associated_beers['uid']) / summation
 
 
-    def get_explorer_score(self, user_id):
-        print("EXPLORER SCORE FOR USER ", user_id)
-        t = time.time()
-        sorted_dates_userId_beerId = self.ratings_ddf.loc[self.ratings_ddf["bid"].isin(self.associated_beers['uid'])][["uid","bid","date"]].sort_values("date")
-        print("   Time for all beers id :", time.time()-t)
-
-        t = time.time()
-        summation = 0
-        for beer_id in self.associated_beers['uid']:
-            sorted_dates_userId = sorted_dates_userId_beerId.loc[sorted_dates_userId_beerId["bid"] == beer_id][["uid","date"]].sort_values("date")
-            sorted_userId = list(sorted_dates_userId["uid"])
-            
-            if user_id in sorted_userId[:min(len(sorted_userId), 10)]:
-                summation += 1
-
-        print("   total time ", time.time()-t)
-        return summation
-
-    
-    
-        
+    def get_explorer_score_for_user(self, user_id):
+        first_ratings = self.ratings_ddf.loc[self.ratings_ddf["rank"] <= 10][["uid"]]
+        first_ratings = first_ratings.loc[first_ratings["uid"] == user_id]
+        return len(first_ratings.index)
+          
