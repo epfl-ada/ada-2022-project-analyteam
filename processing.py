@@ -6,7 +6,7 @@ import dask.dataframe as ddf
 import numpy as np
 
 import ingestion as ing
-from nlp import SentimentAnalyser
+from nlp import SentimentAnalyser, VaderSentimentAnalyser
 from domain_specs import beeradvocate_ratings_ddf
 
 import re
@@ -275,7 +275,7 @@ def ratings_pipeline(persist: bool =False, **kwargs):
     ratings_ddf["review"] = ratings_ddf.review.apply(to_none_ifnot_str, meta=("review", "object"))
     
     # add sentiment column
-    ratings_ddf = batch_sentiment_pipeline(ratings_ddf)
+    ratings_ddf = batch_sentiment_pipeline_vader(ratings_ddf)
     # persist
     if persist:
         ratings_ddf.to_parquet(
@@ -483,5 +483,38 @@ def batch_sentiment_pipeline(ratings_ddf):
     sentiment_ddf[with_reviews, "s-"] = 1 - sentiment_ddf[with_reviews, "s+"] 
     
 
+def batch_sentiment_pipeline_vader(ratings_ddf):
+
+    """
+    Same as sentiment_pipeline but using Vader for sentiment analysis.
+    """
+    # select columns of interest
+    sentiment_ddf = ratings_ddf[__SENTIMENT_COLS]
+
+    # initialize sentiment
+    sentiment_ddf["postive"] = 0
+    sentiment_ddf["negative"] = 0 
+    sentiment_ddf["compound"] = 0
+
+    # compute and set sentiment for ratings with reviews only
+    with_reviews = sentiment_ddf[sentiment_ddf.has_review == True]
+    reviews = with_reviews["review"]
+
+    # initialize sentiment analyser (also takes care of preprocessing)
+    analyser = VaderSentimentAnalyser()
+
+    # get sentiment analysis of ratings with a review
+    negative_sent, postive_sent, compound_sent = analyser.compute(reviews.compute())
+
+    print("negative_sent_sample")
+    print(negative_sent[:10])
+    print("postive_sent_sample")
+    print(postive_sent[:10])
+    print("compound_sent_sample")
+    print(compound_sent[:10])
+
+    sentiment_ddf[with_reviews, "positive"] = postive_sent
+    sentiment_ddf[with_reviews, "negative"] = negative_sent
+    sentiment_ddf[with_reviews, "compound"] = compound_sent
 
         

@@ -10,12 +10,22 @@ from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
 import numpy as np
+
+#HuggingFace
 from datasets import Dataset
 from transformers.pipelines.pt_utils import KeyDataset
+import transformers as trafos
+
+#Vader
+import vaderSentiment
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+
+#NLP libraries
+import spacy, nltk, gensim, sklearn
 
 import pandas as pd
 
-import transformers as trafos
+
 
 class RatingsDataset(Dataset):
     def __init__(self, ratings):
@@ -92,6 +102,40 @@ class SentimentAnalyser:
         for out in tqdm(self.__pipeline(KeyDataset(dataset, "text"), truncation=True, batch_size=32)):
             np.append(sentiments, out)
         return [(sentiment["label"], sentiment["score"]) for sentiment in sentiments]
+
+
+class VaderSentimentAnalyser:
+
+    def __init__(self):
+        self.nlp_pipeline = spacy.load('en_core_web_sm')
+        self.nlp_pipeline.remove_pipe('parser')
+        self.nlp_pipeline.remove_pipe('tagger')
+        self.vader_analyzer = SentimentIntensityAnalyzer()
+    
+    def compute(self, texts):
+        negative_sent = []
+        postive_sent = []
+        compound_sent = []
+
+        #processed_texts = self.nlp_pipeline.pipe(texts)
+        for doc in tqdm(self.nlp_pipeline.pipe(texts, n_process=-1, batch_size=1000)):
+            sentences = [sent.string.strip() for sent in doc.sents]
+            for sentence in sentences:
+                vs = self.vader_analyzer.polarity_scores(sentence)
+                negative_sent.append(vs['neg'])
+                postive_sent.append(vs['pos'])
+                compound_sent.append(vs['compound'])
+
+        print("processing texts")
+        print(processed_texts.sents[0])
+        print(processed_texts.sents[0])
+        negative_sent = [negative_sent.append(self.vader_analyzer.polarity_scores(sent.text)['neg']) for sent in processed_texts.sents]
+        postive_sent = [postive_sent.append(self.vader_analyzer.polarity_scores(sent.text)['pos']) for sent in processed_texts.sents]
+        compound_sent = [compound_sent.append(self.vader_analyzer.polarity_scores(sent.text)['compound']) for sent in processed_texts.sents]
+
+        return negative_sent, postive_sent, compound_sent
+
+
 
 ###################################################################
 # TOKENIZER
