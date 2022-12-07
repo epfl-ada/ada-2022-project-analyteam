@@ -275,7 +275,7 @@ def ratings_pipeline(persist: bool =False, **kwargs):
     ratings_ddf["review"] = ratings_ddf.review.apply(to_none_ifnot_str, meta=("review", "object"))
     
     # add sentiment column
-    ratings_ddf = batch_sentiment_pipeline_vader(ratings_ddf)
+    ratings_ddf = sentiment_pipeline_vader(ratings_ddf)
     # persist
     if persist:
         ratings_ddf.to_parquet(
@@ -482,6 +482,32 @@ def batch_sentiment_pipeline(ratings_ddf):
     sentiment_ddf[with_reviews, "s+"] = pos_sentiments
     sentiment_ddf[with_reviews, "s-"] = 1 - sentiment_ddf[with_reviews, "s+"] 
     
+
+def sentiment_pipeline_vader(ratings_ddf):
+    """
+    This is a milestone 3 pipeline for sentiment analysis of textual reviews.
+    """
+    analyser = VaderSentimentAnalyser()
+    def sentiment_in(text: str):
+        pos_sent, neg_sent, compound_sent = analyser.compute(text)
+        return pos_sent, neg_sent, compound_sent
+    
+    # select columns of interest
+    sentiment_ddf = ratings_ddf[__SENTIMENT_COLS]
+
+    # initialize sentiment
+    sentiment_ddf["postive"] = 0
+    sentiment_ddf["negative"] = 0 
+    sentiment_ddf["compound"] = 0
+
+    # compute and set sentiment for ratings with reviews
+    with_reviews = sentiment_ddf["has_review"]
+
+    # line to optimize using batch processing (batch inference)
+    sentiment_ddf[with_reviews, "postive", "negative", "compound"] = sentiment_ddf[with_reviews, "review"].apply(
+        sentiment_in, meta=("review", "float32"))
+        
+    return sentiment_ddf
 
 def batch_sentiment_pipeline_vader(ratings_ddf):
 

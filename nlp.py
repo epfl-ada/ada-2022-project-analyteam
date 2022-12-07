@@ -112,7 +112,22 @@ class VaderSentimentAnalyser:
         self.nlp_pipeline.remove_pipe('tagger')
         self.vader_analyzer = SentimentIntensityAnalyzer()
     
-    def compute(self, texts):
+
+    def compute(self, text):
+        negative_sent = 0
+        postive_sent = 0
+        compound_sent = 0
+
+        processed_texts = self.nlp_pipeline(text)
+        negative_sent = [self.vader_analyzer.polarity_scores(sent.text)['neg'] for sent in processed_texts.sents]
+        postive_sent = [self.vader_analyzer.polarity_scores(sent.text)['pos'] for sent in processed_texts.sents]
+        compound_sent = [self.vader_analyzer.polarity_scores(sent.text)['compound'] for sent in processed_texts.sents]
+
+        return negative_sent, postive_sent, compound_sent
+
+
+
+    def compute_batch(self, texts):
         negative_sent = []
         postive_sent = []
         compound_sent = []
