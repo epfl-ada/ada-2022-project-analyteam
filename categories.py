@@ -148,7 +148,7 @@ class Categorization():
         """
         self.get_all_scores()
         self.categorize_all_users()
-        self.users_ddf.to_parquet(ing.build_path(folderind="ba", filename="users", ext=".parquet", basepath=ing.REFINED_PATH))
+      
         return self.users_ddf
 
     def categorize_all_users(self):
