@@ -8,6 +8,7 @@ import numpy as np
 import ingestion as ing
 from nlp import SentimentAnalyser, VaderSentimentAnalyser
 from domain_specs import beeradvocate_ratings_ddf
+from tqdm import tqdm
 
 import re
 
@@ -493,9 +494,9 @@ def sentiment_pipeline_vader(ratings_ddf):
     Returns:
         dask.dataframe: dataframe with new columns for sentiment analysis
     """
+    tqdm.pandas()
     analyser = VaderSentimentAnalyser()
     def sentiment_in(text: str):
-        print("text_inp: ", text)
         compound_sent = analyser.compute(text)
         return compound_sent
     
@@ -503,21 +504,14 @@ def sentiment_pipeline_vader(ratings_ddf):
     sentiment_ddf = ratings_ddf[__SENTIMENT_COLS]
 
     # initialize sentiment
-    sentiment_ddf["compound"] = 0
+    sentiment_ddf["compound_sentiment"] = 0
 
     sentiment_ddf = sentiment_ddf.compute()
 
     # compute and set sentiment for ratings with reviews
     with_reviews = sentiment_ddf["has_review"]
-    sentiment_ddf.loc[with_reviews, "compound"] = sentiment_ddf[with_reviews]["review"].apply(
+    sentiment_ddf.loc[with_reviews, "compound_sentiment"] = sentiment_ddf[with_reviews]["review"].progress_apply(
         sentiment_in)
-        
-    # change compound column to sentiment_ddf rows with has_review == True to 10
-    #sentiment_ddf["compound"] = sentiment_ddf["compound"].where(sentiment_ddf["has_review"] == False,
-    #    other=sentiment_ddf["review"].apply(sentiment_in, meta=('review', 'float32')))
-    #sentiment_ddf[with_reviews]["compound"] = sentiment_ddf[with_reviews]["review"].apply(
-    #    sentiment_in, meta=("review", "float32"))
-
         
     return sentiment_ddf
 

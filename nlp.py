@@ -69,7 +69,7 @@ class SentimentAnalyser:
         assert not(text is None) and len(text) > 0
         # text that is too long (its tokenization length exceeds the model's limit)
         # will be truncated
-        sentiment = self.__pipeline(text, truncation=True, device=0) # device=0 to use GPU
+        sentiment = self.__pipeline(text, truncation=True) # device=0 to use GPU
         sentiment = sentiment[0] # for a text input, there will be one result in the list
         
         return sentiment["label"], sentiment["score"]
@@ -129,41 +129,9 @@ class VaderSentimentAnalyser:
             nb_sents += 1
         
         compound_sent /= nb_sents
-        
-
-        #compound_sent = self.vader_analyzer.polarity_scores(str(doc))['compound']
-
-        print("done1")
-
-        print("compound_sent")
-        print(compound_sent)
 
         return  compound_sent
 
-
-
-    def compute_batch(self, texts):
-        negative_sent = []
-        postive_sent = []
-        compound_sent = []
-
-        #processed_texts = self.nlp_pipeline.pipe(texts)
-        for doc in tqdm(self.nlp_pipeline.pipe(texts, n_process=-1, batch_size=1000)):
-            sentences = [sent.string.strip() for sent in doc.sents]
-            for sentence in sentences:
-                vs = self.vader_analyzer.polarity_scores(sentence)
-                negative_sent.append(vs['neg'])
-                postive_sent.append(vs['pos'])
-                compound_sent.append(vs['compound'])
-
-        print("processing texts")
-        print(processed_texts.sents[0])
-        print(processed_texts.sents[0])
-        negative_sent = [negative_sent.append(self.vader_analyzer.polarity_scores(sent.text)['neg']) for sent in processed_texts.sents]
-        postive_sent = [postive_sent.append(self.vader_analyzer.polarity_scores(sent.text)['pos']) for sent in processed_texts.sents]
-        compound_sent = [compound_sent.append(self.vader_analyzer.polarity_scores(sent.text)['compound']) for sent in processed_texts.sents]
-
-        return negative_sent, postive_sent, compound_sent
 
 
 
