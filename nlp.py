@@ -109,21 +109,36 @@ class VaderSentimentAnalyser:
     def __init__(self):
         self.nlp_pipeline = spacy.load('en_core_web_sm')
         self.nlp_pipeline.remove_pipe('parser')
-        self.nlp_pipeline.remove_pipe('tagger')
+        #self.nlp_pipeline.remove_pipe('tagger')
+        #self.nlp_pipeline.add_pipe('morphologizer')
+        self.nlp_pipeline.add_pipe('sentencizer')
         self.vader_analyzer = SentimentIntensityAnalyzer()
     
 
     def compute(self, text):
-        negative_sent = 0
-        postive_sent = 0
         compound_sent = 0
 
+        # get full text of the document
         processed_texts = self.nlp_pipeline(text)
-        negative_sent = [self.vader_analyzer.polarity_scores(sent.text)['neg'] for sent in processed_texts.sents]
-        postive_sent = [self.vader_analyzer.polarity_scores(sent.text)['pos'] for sent in processed_texts.sents]
-        compound_sent = [self.vader_analyzer.polarity_scores(sent.text)['compound'] for sent in processed_texts.sents]
+        doc = processed_texts.doc
 
-        return negative_sent, postive_sent, compound_sent
+        # compute average compound sentiment for the document
+        nb_sents = 0
+        for sent in doc.sents:
+            compound_sent += self.vader_analyzer.polarity_scores(str(sent))['compound']
+            nb_sents += 1
+        
+        compound_sent /= nb_sents
+        
+
+        #compound_sent = self.vader_analyzer.polarity_scores(str(doc))['compound']
+
+        print("done1")
+
+        print("compound_sent")
+        print(compound_sent)
+
+        return  compound_sent
 
 
 

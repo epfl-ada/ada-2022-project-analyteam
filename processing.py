@@ -485,27 +485,39 @@ def batch_sentiment_pipeline(ratings_ddf):
 
 def sentiment_pipeline_vader(ratings_ddf):
     """
-    This is a milestone 3 pipeline for sentiment analysis of textual reviews.
+    Create new columns for sentiment analysis of textual reviews.
+
+    Args:
+        ratings_ddf (dask.dataframe): ratings dataframe
+
+    Returns:
+        dask.dataframe: dataframe with new columns for sentiment analysis
     """
     analyser = VaderSentimentAnalyser()
     def sentiment_in(text: str):
-        pos_sent, neg_sent, compound_sent = analyser.compute(text)
-        return pos_sent, neg_sent, compound_sent
+        print("text_inp: ", text)
+        compound_sent = analyser.compute(text)
+        return compound_sent
     
     # select columns of interest
     sentiment_ddf = ratings_ddf[__SENTIMENT_COLS]
 
     # initialize sentiment
-    sentiment_ddf["postive"] = 0
-    sentiment_ddf["negative"] = 0 
     sentiment_ddf["compound"] = 0
+
+    sentiment_ddf = sentiment_ddf.compute()
 
     # compute and set sentiment for ratings with reviews
     with_reviews = sentiment_ddf["has_review"]
+    sentiment_ddf.loc[with_reviews, "compound"] = sentiment_ddf[with_reviews]["review"].apply(
+        sentiment_in)
+        
+    # change compound column to sentiment_ddf rows with has_review == True to 10
+    #sentiment_ddf["compound"] = sentiment_ddf["compound"].where(sentiment_ddf["has_review"] == False,
+    #    other=sentiment_ddf["review"].apply(sentiment_in, meta=('review', 'float32')))
+    #sentiment_ddf[with_reviews]["compound"] = sentiment_ddf[with_reviews]["review"].apply(
+    #    sentiment_in, meta=("review", "float32"))
 
-    # line to optimize using batch processing (batch inference)
-    sentiment_ddf[with_reviews, "postive", "negative", "compound"] = sentiment_ddf[with_reviews, "review"].apply(
-        sentiment_in, meta=("review", "float32"))
         
     return sentiment_ddf
 
