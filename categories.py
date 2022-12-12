@@ -171,10 +171,10 @@ class Categorization():
         return self.users_ddf
 
     def categorize_all_users(self):
-        cfm_threshold = self.users_ddf[CFM_SCORE_STR].quantile(0.9)  # not fixed yet
-        exp_threshold = -0.25
-        xpl_threshold = self.users_ddf[EXP_SCORE_STR].quantile(0.88) # fixed
-        adv_threshold = self.users_ddf[ADV_SCORE_STR].quantile(0.9)  # fixed
+        cfm_threshold = self.users_ddf[CFM_SCORE_STR].quantile(0.9)
+        exp_threshold = -0.2 # +/-8% error tolerated
+        xpl_threshold = self.users_ddf[XPL_SCORE_STR].quantile(0.88)
+        adv_threshold = self.users_ddf[ADV_SCORE_STR].quantile(0.9)
         
         self.users_ddf[IS_CFM_STR] = np.where(self.users_ddf[CFM_SCORE_STR] >= cfm_threshold, 1, 0)
         self.users_ddf[IS_EXP_STR] = np.where(self.users_ddf[EXP_SCORE_STR] >= exp_threshold, 1, 0)
