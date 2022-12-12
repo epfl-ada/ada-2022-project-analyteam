@@ -10,12 +10,22 @@ from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
 import numpy as np
+
+#HuggingFace
 from datasets import Dataset
 from transformers.pipelines.pt_utils import KeyDataset
+import transformers as trafos
+
+#Vader
+import vaderSentiment
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+
+#NLP libraries
+import spacy, nltk, gensim, sklearn
 
 import pandas as pd
 
-import transformers as trafos
+
 
 class RatingsDataset(Dataset):
     def __init__(self, ratings):
@@ -59,7 +69,7 @@ class SentimentAnalyser:
         assert not(text is None) and len(text) > 0
         # text that is too long (its tokenization length exceeds the model's limit)
         # will be truncated
-        sentiment = self.__pipeline(text, truncation=True, device=0) # device=0 to use GPU
+        sentiment = self.__pipeline(text, truncation=True) # device=0 to use GPU
         sentiment = sentiment[0] # for a text input, there will be one result in the list
         
         return sentiment["label"], sentiment["score"]
@@ -92,6 +102,38 @@ class SentimentAnalyser:
         for out in tqdm(self.__pipeline(KeyDataset(dataset, "text"), truncation=True, batch_size=32)):
             np.append(sentiments, out)
         return [(sentiment["label"], sentiment["score"]) for sentiment in sentiments]
+
+
+class VaderSentimentAnalyser:
+
+    def __init__(self):
+        self.nlp_pipeline = spacy.load('en_core_web_sm')
+        self.nlp_pipeline.remove_pipe('parser')
+        #self.nlp_pipeline.remove_pipe('tagger')
+        #self.nlp_pipeline.add_pipe('morphologizer')
+        self.nlp_pipeline.add_pipe('sentencizer')
+        self.vader_analyzer = SentimentIntensityAnalyzer()
+    
+
+    def compute(self, text):
+        compound_sent = 0
+
+        # get full text of the document
+        processed_texts = self.nlp_pipeline(text)
+        doc = processed_texts.doc
+
+        # compute average compound sentiment for the document
+        nb_sents = 0
+        for sent in doc.sents:
+            compound_sent += self.vader_analyzer.polarity_scores(str(sent))['compound']
+            nb_sents += 1
+        
+        compound_sent /= nb_sents
+
+        return  compound_sent
+
+
+
 
 ###################################################################
 # TOKENIZER
