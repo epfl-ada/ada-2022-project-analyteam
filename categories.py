@@ -171,11 +171,15 @@ class Categorization():
         return self.users_ddf
 
     def categorize_all_users(self):
-        quantile = self.users_ddf.quantile(0.9)
-        self.users_ddf[IS_CFM_STR] = np.where(self.users_ddf[CFM_SCORE_STR] > quantile[CFM_SCORE_STR], 1, 0)
-        self.users_ddf[IS_EXP_STR] = np.where(self.users_ddf[EXP_SCORE_STR] > quantile[EXP_SCORE_STR], 1, 0)
-        self.users_ddf[IS_XPL_STR] = np.where(self.users_ddf[XPL_SCORE_STR] > quantile[XPL_SCORE_STR], 1, 0)
-        self.users_ddf[IS_ADV_STR] = np.where(self.users_ddf[ADV_SCORE_STR] > quantile[ADV_SCORE_STR], 1, 0)
+        cfm_threshold = self.users_ddf[CFM_SCORE_STR].quantile(0.9)  # not fixed yet
+        exp_threshold = self.users_ddf[EXP_SCORE_STR].quantile(0.95) # not fixed yet
+        xpl_threshold = self.users_ddf[EXP_SCORE_STR].quantile(0.88) # fixed
+        adv_threshold = self.users_ddf[ADV_SCORE_STR].quantile(0.9)  # fixed
+        
+        self.users_ddf[IS_CFM_STR] = np.where(self.users_ddf[CFM_SCORE_STR] >= cfm_threshold, 1, 0)
+        self.users_ddf[IS_EXP_STR] = np.where(self.users_ddf[EXP_SCORE_STR] >= exp_threshold, 1, 0)
+        self.users_ddf[IS_XPL_STR] = np.where(self.users_ddf[XPL_SCORE_STR] >= xpl_threshold, 1, 0)
+        self.users_ddf[IS_ADV_STR] = np.where(self.users_ddf[ADV_SCORE_STR] >= adv_threshold, 1, 0)
         
 
     ### SCORE GETTERS
@@ -206,7 +210,7 @@ class Categorization():
         
         self.users_ddf = ddf.merge(self.users_ddf, conformist_table, how="left", on='uid')
         self.users_ddf = self.users_ddf.rename(columns={cmf_per_rating_str: CFM_SCORE_STR})
-        self.users_ddf[CFM_SCORE_STR] = 1 / self.users_ddf[CFM_SCORE_STR]
+        self.users_ddf[CFM_SCORE_STR] = - self.users_ddf[CFM_SCORE_STR]
 
         return self.users_ddf[CFM_SCORE_STR]
 
@@ -216,11 +220,11 @@ class Categorization():
         Stores these values in a new column EXP_SCORE_STR in the dataframe users_ddf
         """
         exp_per_rating_str = 'exp_per_rating'
-        self.ratings_beers_merge[exp_per_rating_str] = ((self.ratings_beers_merge[RATING_STR] - self.ratings_beers_merge[BA_SCORE_BALANCED_STR]))**2
+        self.ratings_beers_merge[exp_per_rating_str] = (self.ratings_beers_merge[RATING_STR] - self.ratings_beers_merge[BA_SCORE_BALANCED_STR]).abs()
 
         self.users_ddf = ddf.merge(self.users_ddf, self.ratings_beers_merge.groupby(UID_STR).mean()[exp_per_rating_str].reset_index(), how="left", on=UID_STR)
         self.users_ddf = self.users_ddf.rename(columns={exp_per_rating_str: EXP_SCORE_STR})
-        self.users_ddf[EXP_SCORE_STR] = 1 / self.users_ddf[EXP_SCORE_STR]
+        self.users_ddf[EXP_SCORE_STR] = - self.users_ddf[EXP_SCORE_STR]
         return self.users_ddf[EXP_SCORE_STR]
 
 
