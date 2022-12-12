@@ -5,12 +5,13 @@ import numpy as np
 from copy import copy
 
 import ingestion as ing
+import sys
 
 import time
 
 REFINED_PATH = "RefinedData"
 
-T = 3 
+T = 3.25
 
 BID_STR = "bid"
 UID_STR = "uid"
@@ -39,6 +40,8 @@ IS_ADV_STR = "is_adv"
 class Categorization():
 
     def __init__(self, ratings_parquets_path, beers_parquet_path, users_parquet_path):
+        __COUNTRIES_OF_INTEREST = [
+    "United States", "Canada", "England", "Australia"]
         self.ratings_ddf = ing.read_parquet(ratings_parquets_path)[[DATE_STR, UID_STR, BID_STR, RATING_STR]].compute()
         self.ratings_ddf.set_index(BID_STR)
         print("ratings loaded")
@@ -50,6 +53,9 @@ class Categorization():
         self.users_ddf = pd.read_parquet(users_parquet_path)
         print("users loaded")
 
+        self.users_ddf = self.users_ddf[self.users_ddf.country.isin(__COUNTRIES_OF_INTEREST)]
+        self.users_ddf = self.users_ddf[self.users_ddf.n_ratings>=5]
+       # self.beers_ddf[BA_SCORE_BALANCED_STR] = self.beers_ddf[BA_SCORE_STR].apply(lambda x: self.mapping(x))
         t = time.time()
         self._ratings_dated()
         print("ratings dated (", time.time()-t,")")
@@ -63,12 +69,9 @@ class Categorization():
         self.ratings_beers_merge = ddf.merge(self.ratings_ddf, self.beers_ddf, how="inner", left_on=BID_STR, right_on=BID_STR)
         self.ratings_beers_merge = self.ratings_beers_merge[self.ratings_beers_merge[STD_RATING_STR] != 0]
         print("std (", time.time()-t,")")
+     
+        self.ratings_beers_merge[BA_SCORE_BALANCED_STR] = (self.ratings_beers_merge[BA_SCORE_STR] - self.ratings_beers_merge[BA_SCORE_STR].mean())/20+ self.ratings_beers_merge[RATING_STR].mean()
 
-        self.ratings_beers_merge[BA_SCORE_BALANCED_STR] = (self.ratings_beers_merge[BA_SCORE_STR] - self.ratings_beers_merge[BA_SCORE_STR].mean()) / self.ratings_beers_merge[BA_SCORE_STR].std() * self.ratings_beers_merge[RATING_STR].std() + self.ratings_beers_merge[RATING_STR].mean()
-
-
-    ### PREPROCESSING
-    
     def _std(self):
         """
         Adds one column in the dataframe beers_ddf which calculates the std rating of the beer
@@ -80,8 +83,23 @@ class Categorization():
         
         self.beers_ddf = ddf.merge(self.beers_ddf, std_score, how="inner", left_on=BID_STR, right_on=BID_STR)
         self.beers_ddf[STD_RATING_STR]=self.beers_ddf.apply(
-            lambda beers : 0 if (beers[N_RATING_STR]==0 or beers[N_RATING_STR]==1) else np.sqrt(beers[STD_RATING_STR]/beers[N_RATING_STR]),axis=1)
-    
+            lambda beers : np.sqrt(beers[STD_RATING_STR]/beers[N_RATING_STR]),axis=1)
+    def mapping(self,x):
+        if(x<=60):
+            return x *(2 / 60)
+        if(x<=70):
+            return 2 + (x-60)*0.1
+        if(x<=80):
+            return 3 + (x-70)*0.05
+        if(x<=85):
+            return 3.5 + (x-80)*0.1
+        if(x<=90):
+            return 4 + (x-85)*0.1
+        if(x<=95):
+            return 4.5 + (x-90)*0.05
+
+        return 4.75 + (x-95)*0.05
+
 
     def _ratings_dated(self):    
         """
@@ -112,6 +130,7 @@ class Categorization():
 
         self.ratings_ddf["dated_rating"] = l_avg_ratings
         self.ratings_ddf["rank"] = l_rank
+
 
 
     def _beers_per_user(self):        
@@ -148,7 +167,7 @@ class Categorization():
         """
         self.get_all_scores()
         self.categorize_all_users()
-        self.users_ddf.to_parquet(ing.build_path(folderind="ba", filename="users", ext=".parquet", basepath=ing.REFINED_PATH))
+        self.users_ddf.replace([np.inf, -np.inf], sys.maxsize, inplace=True)
         return self.users_ddf
 
     def categorize_all_users(self):
@@ -191,18 +210,18 @@ class Categorization():
 
         return self.users_ddf[CFM_SCORE_STR]
 
-
     def get_exp_scores(self):
         """
         Computes and returns (as a list of int) the expert-like score for all users 
         Stores these values in a new column EXP_SCORE_STR in the dataframe users_ddf
         """
         exp_per_rating_str = 'exp_per_rating'
-        self.ratings_beers_merge[exp_per_rating_str] = ((self.ratings_beers_merge[RATING_STR] - self.ratings_beers_merge[BA_SCORE_BALANCED_STR]) / self.ratings_beers_merge[STD_RATING_STR])**2
+        self.ratings_beers_merge[exp_per_rating_str] = ((self.ratings_beers_merge[RATING_STR] - self.ratings_beers_merge[BA_SCORE_BALANCED_STR]))**2
 
         self.users_ddf = ddf.merge(self.users_ddf, self.ratings_beers_merge.groupby(UID_STR).mean()[exp_per_rating_str].reset_index(), how="left", on=UID_STR)
         self.users_ddf = self.users_ddf.rename(columns={exp_per_rating_str: EXP_SCORE_STR})
         self.users_ddf[EXP_SCORE_STR] = 1 / self.users_ddf[EXP_SCORE_STR]
+        return self.users_ddf[EXP_SCORE_STR]
 
 
     def get_adv_scores(self):
@@ -210,13 +229,13 @@ class Categorization():
         Computes and returns (as a list of int) the adventurer score for all users 
         Stores these values in a new column ADV_SCORE_STR in the dataframe users_ddf
         """
-        adventurer_score_fast_table = self.ratings_ddf.loc[self.ratings_ddf[DATED_RATING_STR] < T].groupby(UID_STR).count()[[RANK_STR]]
+        adventurer_score_fast_table = self.ratings_ddf.loc[self.ratings_ddf[DATED_RATING_STR] <= T].groupby(UID_STR).count()[[RANK_STR]]
         adventurer_score_fast_table = adventurer_score_fast_table.reset_index()
 
         self.users_ddf = ddf.merge(self.users_ddf, adventurer_score_fast_table, how="left", on=UID_STR)
 
         self.users_ddf = self.users_ddf.rename(columns={RANK_STR: ADV_SCORE_STR}).fillna(0)
-        self.users_ddf[ADV_SCORE_STR] = self.users_ddf[ADV_SCORE_STR].astype('Int64')
+        self.users_ddf[ADV_SCORE_STR] = self.users_ddf[ADV_SCORE_STR].astype('Int64') / self.users_ddf[N_RATING_STR]
         return self.users_ddf[ADV_SCORE_STR]
 
        
@@ -233,7 +252,7 @@ class Categorization():
         self.users_ddf = ddf.merge(self.users_ddf, grouped_ratings_table, how="left", on=UID_STR)
 
         self.users_ddf = self.users_ddf.rename(columns={RANK_STR: XPL_SCORE_STR}).fillna(0)
-        self.users_ddf[XPL_SCORE_STR] = self.users_ddf[XPL_SCORE_STR].astype('Int64')
+        self.users_ddf[XPL_SCORE_STR] = self.users_ddf[XPL_SCORE_STR].astype('Int64') / self.users_ddf[N_RATING_STR]
 
         return self.users_ddf[XPL_SCORE_STR]
 
