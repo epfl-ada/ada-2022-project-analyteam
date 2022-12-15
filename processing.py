@@ -276,7 +276,7 @@ def ratings_pipeline(persist: bool =False, **kwargs):
     ratings_ddf["review"] = ratings_ddf.review.apply(to_none_ifnot_str, meta=("review", "object"))
     
     # add sentiment column
-    ratings_ddf = sentiment_pipeline_vader(ratings_ddf)
+    #ratings_ddf = sentiment_pipeline_vader(ratings_ddf)
     # persist
     if persist:
         ratings_ddf.to_parquet(

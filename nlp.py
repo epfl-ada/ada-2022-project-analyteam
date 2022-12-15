@@ -108,10 +108,10 @@ class VaderSentimentAnalyser:
 
     def __init__(self):
         self.nlp_pipeline = spacy.load('en_core_web_sm')
-        self.nlp_pipeline.remove_pipe('parser')
+        #self.nlp_pipeline.remove_pipe('parser')
         #self.nlp_pipeline.remove_pipe('tagger')
         #self.nlp_pipeline.add_pipe('morphologizer')
-        self.nlp_pipeline.add_pipe('sentencizer')
+        #self.nlp_pipeline.add_pipe('sentencizer')
         self.vader_analyzer = SentimentIntensityAnalyzer()
     
 
