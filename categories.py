@@ -25,7 +25,6 @@ DATE_STR = "date"
 
 RANK_STR = "rank"
 DATED_RATING_STR = "dated_rating"
-#ASSOCIATED_BEERS_STR = "associated_beers"
 
 CFM_SCORE_STR = "cfm_score"
 XPL_SCORE_STR = "xpl_score"
@@ -84,6 +83,8 @@ class Categorization():
         self.beers_ddf = ddf.merge(self.beers_ddf, std_score, how="inner", left_on=BID_STR, right_on=BID_STR)
         self.beers_ddf[STD_RATING_STR]=self.beers_ddf.apply(
             lambda beers : np.sqrt(beers[STD_RATING_STR]/beers[N_RATING_STR]),axis=1)
+        
+        
     def mapping(self,x):
         if(x<=60):
             return x *(2 / 60)
@@ -259,43 +260,4 @@ class Categorization():
         self.users_ddf[XPL_SCORE_STR] = self.users_ddf[XPL_SCORE_STR].astype('Int64') / self.users_ddf[N_RATING_STR]
 
         return self.users_ddf[XPL_SCORE_STR]
-
-
-### UNUSED / TO DELETE 
-
-    def get_adventurer_score_for_user(self, user_id):
-        rating_of_user_dated = self.ratings_ddf.loc[self.ratings_ddf[dated_rating_str] < T]
-        rating_of_user_dated = rating_of_user_dated.loc[rating_of_user_dated["uid"] == user_id][[dated_rating_str]]
-        return len(rating_of_user_dated.index)
-
-
-    def get_explorer_score_for_user(self, user_id):
-        first_ratings = self.ratings_ddf.loc[self.ratings_ddf["rank"] <= 10][["uid"]]
-        first_ratings = first_ratings.loc[first_ratings["uid"] == user_id]
-        return len(first_ratings.index)
-
-
-    def get_all_scores_for_user(self, user_id):
-        
-        conformist_score = self.get_conformist_score(user_id)
-        adventurer_score = self.get_adventurer_score(user_id)
-        expertlike_score = self.get_expertlike_score(user_id)
-        explorer_score = self.get_explorer_score(user_id)
-
-        return conformist_score, adventurer_score, expertlike_score, explorer_score
-
-
-    def _beers_associated_with_user(self):
-        # self.associated_beers=self.ratings_ddf.groupby('uid')['bid'].apply(list).reset_index('associated_beers')
-        self.associated_beers=self.ratings_ddf.groupby(UID_STR).apply(list)[BID_STR].reset_index(ASSOCIATED_BEERS_STR)
-            
-    
-    def get_ratings_head(self, h = 30):
-        return self.ratings_ddf.sort_values(by="bid").head(h)
-
-    def get_beers_head(self, h=30):
-        return self.beers_ddf.sort_values(by="bid").head(h)
-    
-    def get_users_head(self, h=30):
-        return self.users_ddf.head(h)
         
