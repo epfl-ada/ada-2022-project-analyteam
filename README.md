@@ -61,8 +61,7 @@ For ease of reading, we have saved our results in the notebooks above in the for
 Find below the constributions of our members since the start of milestone 3:
 
 ### Henrique Da Silva Gameiro
-*
-*
+* TODO
 * data story
 
 ### Farouk Boukil
@@ -77,11 +76,9 @@ Find below the constributions of our members since the start of milestone 3:
 * data story
 
 ### Albin Vernhes
-*
-*
+* TODO
 * data story
 
 ### Juliette Parchet
-* 
-* 
+* TODO
 * data story
