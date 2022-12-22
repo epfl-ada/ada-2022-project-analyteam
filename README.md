@@ -45,7 +45,7 @@ Below, you will find a description of the content of each of our notebooks:
 * `processing_ratings.ipynb` (milestone 2): contains our first analysis of the provided `ratings.txt` after parsing it into a CSV file.
 * `processing_users.ipynb` (milestone 2): contains our first analysis of the provided `users.csv`.
 
-* `score_distributions.ipynb` (milestone 3): contains the distributions andclustering of the scores for this project on all the retained users.
+* `score_distributions.ipynb` (milestone 3): contains the distributions of the scores for this project on all the retained users.
 * `statistical_description.ipynb` (milestone 3): statistical descriptions of the score and the categories variation to number of ratings and locations.
 * `ratings_reviews_analysis.ipynb` (milestone 3): contains the analysis of the likelihood of users belonging to a category based on the range their number of ratings/reviews fall in.
 * `regression_analysis.ipynb` (milestone 3): TODO
