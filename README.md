@@ -76,7 +76,8 @@ Find below the constributions of our members since the start of milestone 3:
 * data story
 
 ### Albin Vernhes
-* TODO
+* categories.py
+* statistical_description.ipynb 
 * data story
 
 ### Juliette Parchet
