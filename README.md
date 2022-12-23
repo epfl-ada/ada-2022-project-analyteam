@@ -1,6 +1,6 @@
 # BeerAdvocate.com, Leveraging User Tendencies to Improve User Experience
 
-<a href="https://jucifer06.github.io/ada-website-AnalyTeam/">CLICK HERE TO ACCESS THE DATA STORY: https://jucifer06.github.io/ada-website-AnalyTeam/</a>
+ACCESS TO THE DATA STORY: <a href="https://jucifer06.github.io/ada-website-AnalyTeam/">https://jucifer06.github.io/ada-website-AnalyTeam/</a>
 
 <i>recommendation: use firefox on a computer since we noticed that it has a better display of our website</i>
 
