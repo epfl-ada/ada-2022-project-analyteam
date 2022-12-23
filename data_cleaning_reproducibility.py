@@ -38,6 +38,9 @@
 
 from processing import beers_pipeline, users_pipeline, ratings_pipeline
 from ingestion import txt2csv
+from categories import Categorization
+import ingestion as ing
+
 
 __ALL_TAGS = [
     "beer_name", 
@@ -97,4 +100,24 @@ if __name__ == "__main__":
     beers_pipeline(persist=True, ratings_persisted=True)
     print("done! persisted in ./RefinedData/BeerAdvocate/beers.parquet")
     
+    print("data reproduced.")
+
+    ratings_parquets_path = 'RefinedData/BeerAdvocate//ratings.parquet'
+    beers_parquet_path = "RefinedData/BeerAdvocate/beers.parquet/"
+    users_parquet_path = "RefinedData/BeerAdvocate/users.parquet/"
+
+    categorization=Categorization(ratings_parquets_path,beers_parquet_path,users_parquet_path)
+    categorization.compute_all_scores()
+
+    categorization.users_ddf.to_parquet(ing.build_path(folderind="ba", filename="users", ext=".parquet", basepath=ing.REFINED_PATH))
+    print("computing categories")
+    
+
+    ratings_parquets_path = 'RefinedData/BeerAdvocate//ratings.parquet'
+    beers_parquet_path = "RefinedData/BeerAdvocate/beers.parquet/"
+    users_parquet_path = "RefinedData/BeerAdvocate/users.parquet/"
+    categorization=Categorization(ratings_parquets_path,beers_parquet_path,users_parquet_path)
+    categorization.compute_all_scores()
+   
+    categorization.users_ddf.to_parquet(ing.build_path(folderind="ba", filename="users", ext=".parquet", basepath=ing.REFINED_PATH))
     print("data reproduced.")
