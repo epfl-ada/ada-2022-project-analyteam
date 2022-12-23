@@ -50,7 +50,6 @@ Below, you will find a description of the content of each of our notebooks:
 * `score_distributions.ipynb` (milestone 3): contains the distributions of the scores for this project on all the retained users.
 * `statistical_description.ipynb` (milestone 3): statistical descriptions of the score and the categories variation to number of ratings and locations.
 * `ratings_reviews_analysis.ipynb` (milestone 3): contains the analysis of the likelihood of users belonging to a category based on the range their number of ratings/reviews fall in.
-* `regression_analysis.ipynb` (milestone 3): contains the regression analyis for the categories.
 * `categories_sentiment.ipynb` (milestone 3): contains the sentiment analysis for the review of beers.
 * `categories_style.ipynb` (milestone 3): contains beer style and beer provenance analysis by category.
 * `attractiveness_time_analysis.ipynb` (milestone 3): contains the time analysis of the attractiveness of the website for the studied categories.
@@ -63,8 +62,6 @@ For ease of reading, we have saved our results in the notebooks above in the for
 Find below the constributions of our members since the start of milestone 3:
 
 ### Henrique Da Silva Gameiro
-* notebook `regression_analysis.ipynb`:
-  * regression analyis on user categories with the category as the outcome and nb_ratings, nb_reviews and avg_rating as predictors.
 * notebook `sentiment_analysis.ipynb`:
   * sentiment analysis (using Vader) on reviews of beers for each category and users overall.
 * notebook `categories_style_country.ipynb`:
