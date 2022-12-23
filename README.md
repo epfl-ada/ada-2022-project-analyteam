@@ -1,7 +1,8 @@
 # TITLE: TODO
 
-<a href="https://jucifer06.github.io/ada-website-AnalyTeam/">CLICK HERE TO ACCESS THE DATA STORY</a> 
-recommendation: use firefox on a computer since we noticed that it has a better display of our website
+<a href="https://jucifer06.github.io/ada-website-AnalyTeam/">CLICK HERE TO ACCESS THE DATA STORY</a>
+
+<i>recommendation: use firefox on a computer since we noticed that it has a better display of our website</i>
 
 ## [I] Abstract
 ---
