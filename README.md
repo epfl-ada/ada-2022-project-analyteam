@@ -51,9 +51,8 @@ Below, you will find a description of the content of each of our notebooks:
 * `score_distributions.ipynb` (milestone 3): contains the distributions of the scores for this project on all the retained users.
 * `statistical_description.ipynb` (milestone 3): statistical descriptions of the score and the categories variation to number of ratings and locations.
 * `ratings_reviews_analysis.ipynb` (milestone 3): contains the analysis of the likelihood of users belonging to a category based on the range their number of ratings/reviews fall in.
-* `regression_analysis.ipynb` (milestone 3): TODO
-* `categories_sentiment.ipynb` (milestone 3): TODO
-* `categories_style.ipynb` (milestone 3): TODO
+* `categories_sentiment.ipynb` (milestone 3): contains the sentiment analysis for the review of beers.
+* `categories_style.ipynb` (milestone 3): contains beer style and beer provenance analysis by category.
 * `attractiveness_time_analysis.ipynb` (milestone 3): contains the time analysis of the attractiveness of the website for the studied categories.
 
 ### HTML notebooks
@@ -64,7 +63,14 @@ For ease of reading, we have saved our results in the notebooks above in the for
 Find below the constributions of our members since the start of milestone 3:
 
 ### Henrique Da Silva Gameiro
-* TODO
+* notebook `sentiment_analysis.ipynb`:
+  * sentiment analysis (using Vader) on reviews of beers for each category and users overall.
+* notebook `categories_style_country.ipynb`:
+  * analyising what kind of beer styles each category rate and comparing behaviour.
+  * analyising what kind of beer styles are more liked for each category.
+  * analysing where the user location.
+  * analysing number of ratings for beer provenance.
+  * analysing what beer provenance each category likes more.
 * data story
 
 ### Farouk Boukil
@@ -84,5 +90,6 @@ Find below the constributions of our members since the start of milestone 3:
 * data story
 
 ### Juliette Parchet
-* TODO
+* categories.py
+* website construction
 * data story
