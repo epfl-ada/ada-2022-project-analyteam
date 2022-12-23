@@ -25,16 +25,6 @@ import spacy, nltk, gensim, sklearn
 
 import pandas as pd
 
-
-
-class RatingsDataset(Dataset):
-    def __init__(self, ratings):
-        self.ratings = ratings
-    def __len__(self):
-        return len(self.ratings)
-    def __getitem__(self, item):
-        return self.ratings[item]
-
     
 
 
