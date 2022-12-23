@@ -39,6 +39,7 @@ IS_ADV_STR = "is_adv"
 class Categorization():
 
     def __init__(self, ratings_parquets_path, beers_parquet_path, users_parquet_path):
+        """get the different DataFrame fome the parquets and compute helpers used for computings the different categories"""
         __COUNTRIES_OF_INTEREST = [
     "United States", "Canada", "England", "Australia"]
         self.ratings_ddf = ing.read_parquet(ratings_parquets_path)[[DATE_STR, UID_STR, BID_STR, RATING_STR]].compute()
@@ -54,7 +55,7 @@ class Categorization():
 
         self.users_ddf = self.users_ddf[self.users_ddf.country.isin(__COUNTRIES_OF_INTEREST)]
         self.users_ddf = self.users_ddf[self.users_ddf.n_ratings>=5]
-       # self.beers_ddf[BA_SCORE_BALANCED_STR] = self.beers_ddf[BA_SCORE_STR].apply(lambda x: self.mapping(x))
+        self.beers_ddf[BA_SCORE_BALANCED_STR] = self.beers_ddf[BA_SCORE_STR].apply(lambda x: self.mapping(x))
         t = time.time()
         self._ratings_dated()
         print("ratings dated (", time.time()-t,")")
@@ -68,9 +69,7 @@ class Categorization():
         self.ratings_beers_merge = ddf.merge(self.ratings_ddf, self.beers_ddf, how="inner", left_on=BID_STR, right_on=BID_STR)
         self.ratings_beers_merge = self.ratings_beers_merge[self.ratings_beers_merge[STD_RATING_STR] != 0]
         print("std (", time.time()-t,")")
-     
-        self.ratings_beers_merge[BA_SCORE_BALANCED_STR] = (self.ratings_beers_merge[BA_SCORE_STR] - self.ratings_beers_merge[BA_SCORE_STR].mean())/20+ self.ratings_beers_merge[RATING_STR].mean()
-
+        
     def _std(self):
         """
         Adds one column in the dataframe beers_ddf which calculates the std rating of the beer
@@ -86,6 +85,7 @@ class Categorization():
         
         
     def mapping(self,x):
+        """Mapping from the ba_score to the balanced_ba_score here we used https://www.beeradvocate.com/community/threads/beeradvocate-ratings-explained.184726/ to get the corresponding score"""
         if(x<=60):
             return x *(2 / 60)
         if(x<=70):

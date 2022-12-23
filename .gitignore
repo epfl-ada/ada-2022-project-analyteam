@@ -7,11 +7,6 @@ __pycache__
 # compressed files
 *.tar.gz
 
-# files
-*.csv
-*.txt
-
 # folders
-test*
-*archive
 *Data
+*archive
