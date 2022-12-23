@@ -1,4 +1,4 @@
-# TITLE: TODO
+# BeerAdvocate.com, Leveraging User Tendencies to Improve User Experience
 
 <a href="https://jucifer06.github.io/ada-website-AnalyTeam/">CLICK HERE TO ACCESS THE DATA STORY</a>
 
@@ -13,7 +13,8 @@ In this project, we soft-cluster the users of beeradvocate.com within a set of p
 
 ## [II] Research Questions
 ---
-TODO
+1. Can natural soft-clustering as defined above help uncover hidden user tendencies that may be key to improving the user experience on the website?
+2. What kind of users does the website attract most and how can we leverage that to improve it?
 
 ## [III] Approach
 ---
