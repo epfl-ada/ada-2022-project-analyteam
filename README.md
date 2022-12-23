@@ -89,5 +89,6 @@ Find below the constributions of our members since the start of milestone 3:
 * data story
 
 ### Juliette Parchet
-* TODO
+* categories.py
+* website construction
 * data story
